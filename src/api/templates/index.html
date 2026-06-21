@@ -1,0 +1,92 @@
+<style>
+      h1 {
+        text-align: center;
+        font-size: min(3rem, 7vw);
+        margin-bottom: 0;
+        position: relative;
+      }
+      .pbox {
+        color: var(--blurb);
+        font-weight: 600;
+        max-width: min(32rem, 80vw);
+        margin: 1rem auto;
+        position: relative;
+      }
+      @keyframes hide-show {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .socials {
+        display: flex;
+        justify-content: space-between;
+        position: absolute;
+        top: 1.35em;
+        right: 0.35em;
+        flex-flow: column;
+        gap: 0.35em;
+      }
+      .socials a {
+        text-decoration: none;
+      }
+      .socials img {
+        width: 1em;
+        height: 1em;
+      }
+      #divImg {
+        flex: 1 1 5rem;
+        position: relative;
+      }
+      video {
+        width: 100%;
+        height: 100%;
+      }
+      .footer {
+        margin: .75rem;
+        display: flex;
+        flex-flow: row wrap;
+        justify-content: space-around;
+      }
+      .footer a {
+      }
+</style>
+
+{{> header title="Allentown ReFringe" }}
+
+    <div class="main">
+      <nav>
+        <ul>
+        </ul>
+      </nav>
+      
+      <h1>Allentown ReFringe 2026</h1>
+      
+      <div class="socials">
+        <a href="https://www.facebook.com/people/Allentown-ReFringe/61586907382970/">
+          <img src="img/fb.ico">
+        </a>
+        <a href="https://www.instagram.com/allentownrefringe/">
+          <img src="img/ig.webp">
+        </a>
+      </div>
+
+      </h1>
+      
+      <div class="pbox">
+        <p>
+          The Allentown ReFringe is designed as a collaborative arts showcase, scheduled for May 14-17, 2026. We will attempt to fill Allentown with experimental works that blend community and creativity. We hope to feature unusual art in unusual spaces. Artists from all disciplines–and those who mix them–are encouraged to collaborate.
+        </p>
+      </div>
+      
+      <div id="divImg">
+        <video controls loop autoplay loading="lazy">
+          <source src="img/refringe.mp4"></source>
+        </video>
+      </div>
+      
+      <div class="footer">
+      </div>
+    </div>

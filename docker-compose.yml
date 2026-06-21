@@ -1,0 +1,65 @@
+
+services:
+  # docker exec -it refringe-pg psql -h localhost -U refringe refringe
+  refringe-pg:
+    image: postgres:18
+    container_name: refringe-pg
+    hostname: refringe-pg
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-refringe}"
+      POSTGRES_USER: "${POSTGRES_USER:-refringe}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-changeme}"
+    volumes:
+      - ./sql-initdb.d:/docker-entrypoint-initdb.d
+      - refringe_pg:/var/lib/postgresql
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  refringe-api:
+    image: node:alpine
+    container_name: refringe-api
+    hostname: refringe-api
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-refringe}"
+      POSTGRES_USER: "${POSTGRES_USER:-refringe}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-changeme}"
+    working_dir: /api
+    entrypoint: ["/api/entrypoint.sh"]
+    command: ["npm", "start"]
+    volumes:
+      - ./src/api:/api
+    networks:
+      - app-network
+    restart: unless-stopped
+    depends_on:
+      refringe-pg:
+        condition: service_healthy
+
+  refringe-web:
+    image: nginx:mainline-alpine
+    container_name: refringe-web
+    hostname: refringe-web
+    ports:
+      - 8080:80
+    volumes:
+      - ./src/static/:/var/www/
+      - ./nginx.conf.d/:/etc/nginx/conf.d/
+    networks:
+      - app-network
+    restart: unless-stopped
+    depends_on:
+      - refringe-api
+
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  refringe_pg:

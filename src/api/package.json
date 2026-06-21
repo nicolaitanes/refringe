@@ -1,0 +1,20 @@
+{
+  "name": "refringe-api",
+  "version": "1.0.0",
+  "description": "ReFringe API",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "dependencies": {
+    "compression": "^1.8.0",
+    "cors": "^2.8.5",
+    "date-fns": "^4.1.0",
+    "@date-fns/tz": "1.2.0",
+    "express": "^4.18.1",
+    "handlebars": "^4.7.9",
+    "multer": "^2.0.1",
+    "pg": "^8.22.0",
+    "sql-template-strings": "^2.2.2",
+    "yargs": "^15.1.0"
+  }
+}

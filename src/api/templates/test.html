@@ -1,0 +1,17 @@
+{{> header title="Test" }}
+
+<div>testing [[ message ]]</div>
+
+<script type="module">
+  import { createApp } from 'vue';
+
+  const TestApp = {
+      delimiters: ['[[', ']]'],
+      data() {
+          return { message: 'Hello Test' };
+      }
+  }
+
+  createApp(TestApp).mount('div');
+
+</script>

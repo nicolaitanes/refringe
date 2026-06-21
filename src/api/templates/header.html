@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>{{ title }}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="initial-scale=1, width=device-width">
+
+    <meta property="og:title" content="Allentown ReFringe" />
+    <meta property="og:description" content="Collaborative Arts Showcase" />
+    <meta property="og:site_name" content="ReFringe.org" />
+    <meta property="og:url" content="https://refringe.mandelics.com" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://refringe.mandelics.com/img/refringe-ogp2.jpg" />
+    <meta property="og:image:alt" content="ReFringe Flyer" />
+
+    <script type="importmap">
+    {
+        "imports": {
+            "vue": "/js/vue.esm-browser.3.5.38.prod.js"
+        }
+    }
+    </script>
+
+    <style>
+      html {
+        box-sizing: border-box;
+      }
+      *, *:before, *:after {
+        box-sizing: inherit;
+      }
+      body {
+      --bg: #fff;
+      --fg: #111;
+      --btn: #20a;
+      --btn-hover: #32a;
+      --btn-active: #109;
+      --btn-fg: #ddd;
+      --link: #20a;
+      --blurb: #750;
+        padding: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: sans-serif;
+      }
+      @media (prefers-color-scheme: dark) {
+      body {
+      --bg: #111;
+      --fg: #ddd;
+      --link: #ddf;
+      --blurb: #f8f605;
+      }
+      }
+      a, a:visited, a:active, a:hover {
+        color: var(--link);
+      }
+      .main {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        display: flex;
+        flex-flow: column nowrap;
+      }
+      nav ul {
+        display: flex;
+        flex-flow: row wrap;
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+      }
+      nav li {
+        flex: 1 0 15rem;
+        display: flex;
+      }
+      nav a.nav {
+        display: inline-block;
+        flex-grow: 1;
+        text-decoration: none;
+        margin: 1px;
+        border: 1px solid var(--btn-hover);
+        padding: .62rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: var(--btn);
+        min-width: 15rem;
+        text-align: center;
+        color: var(--btn-fg);
+      }
+      nav a:hover {
+        background: var(--btn-hover);
+        color: var(--btn-fg);
+      }
+      nav a:active {
+        background: var(--btn-active);
+        color: var(--btn-fg);
+      }
+      nav a:focus, nav a:hover {
+        background: var(--btn-hover);
+        color: var(--btn-fg);
+      }
+    </style>
+  </head>
+  <body>
