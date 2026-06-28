@@ -26,6 +26,7 @@ services:
     container_name: refringe-api
     hostname: refringe-api
     environment:
+      COOKIE_SECRET: "${COOKIE_SECRET:-changeme}"
       POSTGRES_DB: "${POSTGRES_DB:-refringe}"
       POSTGRES_USER: "${POSTGRES_USER:-refringe}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-changeme}"
