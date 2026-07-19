@@ -1,0 +1,46 @@
+{{> header title=user.username }}
+
+<!-- TODO breadcrumb nav: home > menu [> users] -->
+
+<h3>Edit user details for {{user.username}}</h3>
+
+<form action="/user/{{user.id}}" method="POST" enctype="multipart/form-data">
+  <input type="hidden" name="username" id="username" value="{{ user.username }}">
+  <label for="passwordChange">Change Password:</label>
+  <input type="password" name="passwordChange" id="passwordChange" autocomplete="off"> <!-- TODO toggle cleartext -->
+  <!-- TODO passwordConfirm is actually just for the user edit form -->
+  <label for="passwordConfirm">Repeat password:</label>
+  <input type="password" name="passwordConfirm" id="passwordConfirm" autocomplete="off"> <!-- TODO toggle cleartext -->
+  <label for="fullname">Full Name:</label>
+  <input type="text" name="fullname" id="fullname" value="{{ user.fullname }}">
+  <label for="phone">Phone:</label>
+  <input type="text" name="phone" id="phone" value="{{ user.phone }}">
+  <label for="email">Email:</label>
+  <input type="text" name="email" id="email" value="{{ user.email }}">
+  {{#if isAdmin}}
+  <label for="roleid">Role:</label>
+  <select id="roleid" name="roleid" value="{{user.roleid}}">
+    {{#each roles}}
+    <option value="{{id}}">{{name}}</option>
+    {{/each}}
+  </select>
+  <label><input type="checkbox" name="active" id="active" {{#if user.active}}checked="checked"{{/if}}> Active</label>
+  {{/if}}
+  <button type="submit">Save Changes</button>
+</form>
+
+{{#if message}}
+<p class="{{severity}}">{{message}}</p>
+{{/if}}
+
+<script>
+  // remove ?saved=1 for next reload
+  history.replaceState({}, null, location.pathname);
+
+  for (const select of document.querySelectorAll('select')) {
+      const value = select.getAttribute('value');
+      if (!value) continue;
+      const opt = select.querySelector(`option[value="${value}"]`);
+      opt.selected = true;
+  }
+</script>

@@ -1,0 +1,35 @@
+{{> header title="Users - Allentown ReFringe" }}
+
+<!-- TODO nav/breadcrumb back to home / menu -->
+<!-- TODO ideally sort/filter, column select, ... -->
+
+<table>
+  <thead>
+    <tr>
+      <th>Active</th>
+      <th>Name</th>
+      <th>Phone</th>
+      <th>Email</th>
+      <th>Username</th>
+      <th>Role</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each users}}
+    <tr data-id="{{id}}">
+      <td>
+        {{#if active}}
+        ✔️
+        {{else}}
+        🚫
+        {{/if}}
+      </td>
+      <td><a href="/user/{{id}}">{{fullname}}</a></td>
+      <td>{{phone}}</td>
+      <td>{{email}}</td>
+      <td>{{username}}</td>
+      <td>{{role}}</td>
+    </tr>
+    {{/each}}
+  </tbody>
+</table>

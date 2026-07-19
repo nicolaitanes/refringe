@@ -1,0 +1,21 @@
+{{> header title="Sign Up - Allentown ReFringe" }}
+
+<form action="/user" method="POST" enctype="multipart/form-data">
+  <label for="username">Username:</label>
+  <input type="text" name="username" id="username" value="{{user.username}}">
+  <label for="password">Password:</label>
+  <input type="password" name="password" id="password"> <!-- TODO toggle cleartext -->
+  <label for="fullname">Full Name:</label>
+  <input type="text" name="fullname" id="fullname" value="{{user.fullname}}">
+  <label for="phone">Phone:</label>
+  <input type="text" name="phone" id="phone" value="{{user.phone}}">
+  <label for="email">Email:</label>
+  <input type="text" name="email" id="email" value="{{user.email}}">
+  <p><label for="robot">Robot test</label> -- Please enter the following word: <span class="robotest">"laced"</span></p>
+  <input type="text" name="robot" id="robot" value="{{user.robot}}">
+  <button type="submit">Sign Up</button>
+</form>
+
+{{#if message}}
+<p class="{{severity}}">{{message}}</p>
+{{/if}}

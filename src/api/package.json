@@ -2,6 +2,7 @@
   "name": "refringe-api",
   "version": "1.0.0",
   "description": "ReFringe API",
+  "type": "module",
   "scripts": {
     "start": "node index.mjs"
   },
