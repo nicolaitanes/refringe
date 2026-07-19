@@ -22,6 +22,7 @@
     }
     </script>
 
+    <link href="/tachyons.min.css" rel="stylesheet" />
     <style>
       html {
         box-sizing: border-box;
@@ -31,6 +32,7 @@
       }
       body {
       --bg: #fff;
+      --menu-bg: #ccc;
       --fg: #111;
       --btn: #20a;
       --btn-hover: #32a;
@@ -46,6 +48,7 @@
       @media (prefers-color-scheme: dark) {
       body {
       --bg: #111;
+      --menu-bg: #444;
       --fg: #ddd;
       --link: #ddf;
       --blurb: #f8f605;
@@ -63,18 +66,18 @@
         display: flex;
         flex-flow: column nowrap;
       }
-      nav ul {
+      nav.bar ul {
         display: flex;
         flex-flow: row wrap;
         margin: 0;
         padding: 0;
         list-style-type: none;
       }
-      nav li {
+      nav.bar li {
         flex: 1 0 15rem;
         display: flex;
       }
-      nav a.nav {
+      nav.bar a.nav {
         display: inline-block;
         flex-grow: 1;
         text-decoration: none;
@@ -88,21 +91,42 @@
         text-align: center;
         color: var(--btn-fg);
       }
-      nav a:hover {
+      nav.bar a:hover {
         background: var(--btn-hover);
         color: var(--btn-fg);
       }
-      nav a:active {
+      nav.bar a:active {
         background: var(--btn-active);
         color: var(--btn-fg);
       }
-      nav a:focus, nav a:hover {
+      nav.bar a:focus, nav.bar a:hover {
         background: var(--btn-hover);
         color: var(--btn-fg);
       }
       .robotest {
         direction: rtl;
         unicode-bidi: bidi-override;
+      }
+      .usermenu {
+        position: absolute;
+        top: .5rem;
+        right: .5rem;
+        font-size: 162%
+      }
+      [popover] {
+        background: var(--menu-bg);
+        color: var(--fg);
+        border: 1px solid var(--fg);
+      }
+      #avatarmenu {
+        position: absolute;
+        margin: 0;
+        padding: 0;
+        inset: auto;
+        top: 3rem;
+        right: .5rem;
+        list-style: none;
+        min-width: 12em;
       }
     </style>
   </head>

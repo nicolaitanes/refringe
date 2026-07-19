@@ -1,11 +1,18 @@
 {{> header title="Menu - Allentown ReFringe" }}
 
+<div class="usermenu">
+  {{auth.n}} <button class="avatar" popovertarget="avatarmenu">🫅</button>
+</div>
+<ul id="avatarmenu" popover>
+  <li class="pa2 bb"><a href="/user/{{auth.u}}">My Profile</a></li>
+  <li class="pa2"><a href="/logout">Log Out</a></li>
+</ul>
+
 <nav>
-  <ul>
+  <ul class="flex flex-column">
     {{#if isOrg}}
     <li><a href="/users">Users</a></li>
     {{/if}}
-    <li><a href="/logout">Log Out</a></li>
   </ul>
 </nav>
 
