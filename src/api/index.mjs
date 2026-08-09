@@ -8,6 +8,7 @@ import yargs from 'yargs';
 import { initAuth } from './auth.js';
 import { initTemplates, renderTemplate } from './templates.js';
 import { pgdb } from './pgdb.js';
+import { router as qq } from './questions.js';
 import { usersDB } from './users.js';
 
 const args = yargs.option('verbose', {
@@ -29,6 +30,8 @@ app.use(cors({ origin: args.origin }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
 initAuth(app);
+
+app.use('/qq', qq);
 
 app.use(express.json());
 
