@@ -1,0 +1,11 @@
+<div class="breadcrumb flex flex-row gap-1 ma2 f3">
+  <span><a href="/">🏠</a></span>
+  <span>&gt;</span>
+  <span>
+    {{#if backlink}}
+    <a href="{{backlink}}">{{title}}</a>
+    {{else}}
+    {{ title }}
+    {{/if}}
+  </span>
+</div>

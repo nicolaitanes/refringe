@@ -11,11 +11,13 @@ const noauthAllowList = new Set([
     '/login',
     '/logout',
     '/setup',
+    '/signup',
     '/welcome'
 ]);
 
 const levelRestricted = {
-    '/testdb': 0, // admin+
+    '/configuration': 0, // admin+
+    '/testdb': 0,
     '/users': 0,
     // '/my-route': 10 // organizer+
 };
@@ -33,16 +35,16 @@ const issueCookie = (req, res, body) => {
 
 export const initAuth = app => {
     app.use(async (req, res) => {
-        if (noauthAllowList.has(req.path)) return req.next();
-        
         const cookie = req.signedCookies.rfa;
         if (cookie) {
             try {
                 const auth = JSON.parse(cookie);
-                if (!auth?.u) return res.redirect(303, '/');
-                
                 // TODO check user in cache etc.
                 req.auth = auth;
+                if (noauthAllowList.has(req.path)) return req.next();
+        
+                if (!auth?.u) return res.redirect(303, '/');
+                
                 if (!auth?.d || (auth.d + 5 * 60 * 1000) < new Date().getTime()) {
                     try {
                         const user = await usersDB.getByID(auth.u);
@@ -63,6 +65,7 @@ export const initAuth = app => {
             }
         }
         
+        if (noauthAllowList.has(req.path)) return req.next();
         res.redirect(303, '/');
     });
     
@@ -86,10 +89,20 @@ export const initAuth = app => {
         issueCookie(req, res, req.auth);
         res.redirect(303, '/menu');
     });
+
+    app.get('/login', (req, res) => {
+        if (req.auth?.u) return res.redirect(303, '/menu');
+        return renderTemplate({ template: 'login' })(req, res);
+    });
     
     app.get('/logout', (req, res) => {
         issueCookie(req, res, {});
         res.redirect(303, '/');
+    });
+    
+    app.get('/signup', (req, res) => {
+        if (req.auth?.u) return res.redirect(303, '/menu');
+        return renderTemplate({ template: 'signup' })(req, res);
     });
     
     // TODO update revocation on user password change

@@ -1,6 +1,9 @@
 {{> header title=user.username }}
-
-<!-- TODO breadcrumb nav: home > menu [> users] -->
+{{#if isAdmin}}
+{{> breadcrumb title="Users" backlink="/users" }}
+{{else}}
+{{> breadcrumb title=user.username }}
+{{/if}}
 
 <h3>Edit user details for {{user.username}}</h3>
 
@@ -8,7 +11,6 @@
   <input type="hidden" name="username" id="username" value="{{ user.username }}">
   <label for="passwordChange">Change Password:</label>
   <input type="password" name="passwordChange" id="passwordChange" autocomplete="off"> <!-- TODO toggle cleartext -->
-  <!-- TODO passwordConfirm is actually just for the user edit form -->
   <label for="passwordConfirm">Repeat password:</label>
   <input type="password" name="passwordConfirm" id="passwordConfirm" autocomplete="off"> <!-- TODO toggle cleartext -->
   <label for="fullname">Full Name:</label>

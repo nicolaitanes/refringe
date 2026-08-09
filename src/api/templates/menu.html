@@ -1,18 +1,19 @@
 {{> header title="Menu - Allentown ReFringe" }}
+{{> breadcrumb title="Menu" }}
 
-<div class="usermenu">
-  {{auth.n}} <button class="avatar" popovertarget="avatarmenu">🫅</button>
-</div>
-<ul id="avatarmenu" popover>
-  <li class="pa2 bb"><a href="/user/{{auth.u}}">My Profile</a></li>
-  <li class="pa2"><a href="/logout">Log Out</a></li>
-</ul>
+<style>
+  .usermenu > span {
+      display: block;
+  }
+</style>
 
 <nav>
+  <!-- e.g.
   <ul class="flex flex-column">
     {{#if isOrg}}
     <li><a href="/users">Users</a></li>
     {{/if}}
   </ul>
+  -->
 </nav>
 

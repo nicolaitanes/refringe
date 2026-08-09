@@ -111,7 +111,10 @@
         position: absolute;
         top: .5rem;
         right: .5rem;
-        font-size: 162%
+        z-index: 10;
+        & > span {
+          display: none;
+        }
       }
       [popover] {
         background: var(--menu-bg);
@@ -127,7 +130,31 @@
         right: .5rem;
         list-style: none;
         min-width: 12em;
-      }
+        }
+        .gap-1 {
+          gap: .25em;
+        }
+        .gap-2 {
+          gap: .5em;
+        }
+        .gap-3 {
+          gap: 1em;
+        }
     </style>
   </head>
   <body>
+
+   {{#if auth.u}}
+    <div class="usermenu flex flex-row gap-2 f3">
+      <span>{{auth.n}}</span>
+      <button class="avatar" popovertarget="avatarmenu">🫅</button>
+    </div>
+    <ul id="avatarmenu" popover>
+      {{#if isAdmin}}
+          <li class="pa2 bb"><a href="/config">Configuration</a></li>
+      {{/if}}
+      <li class="pa2 bb"><a href="/user/{{auth.u}}">My Profile</a></li>
+      <li class="pa2"><a href="/logout">Log Out</a></li>
+    </ul>
+   {{/if}}
+

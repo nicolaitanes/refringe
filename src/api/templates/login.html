@@ -1,4 +1,5 @@
 {{> header title="Log In - Allentown ReFringe" }}
+{{> breadcrumb title="Log In" }}
 
 <form action="/auth" method="POST" enctype="multipart/form-data">
   <input type="text" name="username" id="username" value="{{ auth.u }}">
@@ -6,4 +7,4 @@
   <button type="submit">Log In</button>
 </form>
 
-<a href="/signup">Sign Up as a Contributor</a>
+<a href="/signup">Create an Account</a>
