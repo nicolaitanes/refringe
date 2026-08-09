@@ -23,32 +23,29 @@ export const usersDB = {
     },
     async create(userdata) {
         const passhash = await bcrypt.hash(userdata.password, saltRounds);
-        const userResult = await pgdb.query(SQL`insert into users
+        return await pgdb.add('users', userdata, SQL`insert into users
             (username, roleid, passhash, fullname)
             values (${userdata.username}, ${userdata.roleid}, ${passhash}, ${userdata.fullname})
             returning *`);
-        const user = userResult.rows[0];
-        return user;
     },
     async list() {
         const result = await pgdb.query(SQL`select u.id, u.active, r.level, u.username, u.fullname, u.phone, u.email from users u join roles r on u.roleid = r.id order by u.active desc, u.fullname`);
         return result.rows;
     },
     async update(id, userdata) {
-        const userResult = await pgdb.query(userdata.roleid !== undefined
+        return await pgdb.update('users', id, userdata, userdata.roleid !== undefined
            ? SQL`update users set fullname=${userdata.fullname}, phone=${userdata.phone}, email=${userdata.email}, roleid=${userdata.roleid}, active=${userdata.active} where id=${id}`
            : SQL`update users set fullname=${userdata.fullname}, phone=${userdata.phone}, email=${userdata.email} where id=${id}`
         );
-        const user = userResult.rows[0];
-        return user;
     },
     async updatePassword(id, password) {
         const passhash = await bcrypt.hash(userdata.password, saltRounds);
-        await pgdb.query(SQL`update users set passhash=${passhash} where id = ${id}`);
+        await pgdb.update('users', id, { passhash }, SQL`update users set passhash=${passhash} where id = ${id}`);
     },
     async revokeOtherDevices(id) {
+        await pgdb.logEvent('revoke', { userid: id });
         const result = await pgdb.query(SQL`update users set revocation = revocation + 1 where id=${id} returning revocation`);
-        return result.rows[0].revocation;
+        return result.revocation;
     },
     async findRoleID(level) {
         // TODO cache for a little while

@@ -12,6 +12,7 @@ const noauthAllowList = new Set([
     '/logout',
     '/setup',
     '/signup',
+    '/user',
     '/welcome'
 ]);
 

@@ -16,6 +16,24 @@ export const pgdb = new pg.Pool({
     password: process.env.POSTGRES_PASSWORD
 });
 
+pgdb.logEvent = async (op, context, tbl=null) => {
+    // TODO persist for rehydration
+    console.log(`${op} ${tbl}\n${JSON.stringify(context, null, 2)}\n`);
+};
+
+pgdb.add = async (tbl, context, q) => {
+    await pgdb.logEvent('I', result.rows[0] ?? context, tbl);
+    const result = await pgdb.query(q);
+    return result.rows[0];
+};
+
+pgdb.update = async (tbl, id, context, q) => {
+    await pgdb.logEvent('U', { ...context, id }, tbl);
+    const result = await pgdb.query(q);
+    return result.rows[0];
+};
+    
+
 for (const tbl of ['migrations', 'seeds']) {
     const result = await pgdb.query('select name from ' + tbl);
     const scripts = new Set(result.rows.map(r => r.name));

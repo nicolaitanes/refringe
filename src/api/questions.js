@@ -11,17 +11,16 @@ export const questionsDB = {
         return result.rows;
     },
     async add(q) {
-        const result = await pgdb.query(SQL`insert into questions (
+        return await pgdb.add('questions', q, SQL`insert into questions (
             required, forproposal, forvenue, priority,
             fieldname, fieldtype, choices, pattern, question
         ) values (
             ${q.required}, ${q.forproposal}, ${q.forvenue}, ${q.priority},
             ${q.fieldname}, ${q.choices}, ${q.pattern}, ${q.question}
         ) returning *`);
-        return result.rows[0];
     },
     async update(id, q) {
-        await pgdb.query(SQL`update questions set
+        return await pgdb.update('questions', id, q, SQL`update questions set
         required = ${q.required},
         forproposal = ${q.forproposal},
         forvenue = ${q.forvenue},
