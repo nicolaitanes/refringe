@@ -5,35 +5,44 @@
 {{> breadcrumb title=user.username }}
 {{/if}}
 
-<h3>Edit user details for {{user.username}}</h3>
+<div class="ma1">
+  <h3>Edit user details for {{user.username}}</h3>
 
-<form action="/user/{{user.id}}" method="POST" enctype="multipart/form-data">
-  <input type="hidden" name="username" id="username" value="{{ user.username }}">
-  <label for="passwordChange">Change Password:</label>
-  <input type="password" name="passwordChange" id="passwordChange" autocomplete="off"> <!-- TODO toggle cleartext -->
-  <label for="passwordConfirm">Repeat password:</label>
-  <input type="password" name="passwordConfirm" id="passwordConfirm" autocomplete="off"> <!-- TODO toggle cleartext -->
-  <label for="fullname">Full Name:</label>
-  <input type="text" name="fullname" id="fullname" value="{{ user.fullname }}">
-  <label for="phone">Phone:</label>
-  <input type="text" name="phone" id="phone" value="{{ user.phone }}">
-  <label for="email">Email:</label>
-  <input type="text" name="email" id="email" value="{{ user.email }}">
-  {{#if isAdmin}}
-  <label for="roleid">Role:</label>
-  <select id="roleid" name="roleid" value="{{user.roleid}}">
-    {{#each roles}}
-    <option value="{{id}}">{{name}}</option>
-    {{/each}}
-  </select>
-  <label><input type="checkbox" name="active" id="active" {{#if user.active}}checked="checked"{{/if}}> Active</label>
+  <form action="/user/{{user.id}}" method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="username" id="username" value="{{ user.username }}">
+    <div class="formfields">
+      <label for="fullname">Full Name:</label>
+      <input type="text" name="fullname" id="fullname" value="{{ user.fullname }}">
+      <label for="phone">Phone:</label>
+      <input type="text" name="phone" id="phone" value="{{ user.phone }}">
+      <label for="email">Email:</label>
+      <input type="text" name="email" id="email" value="{{ user.email }}">
+      {{#if isAdmin}}
+      <label for="roleid">Role:</label>
+      <select id="roleid" name="roleid" value="{{user.roleid}}">
+        {{#each roles}}
+        <option value="{{id}}">{{name}}</option>
+        {{/each}}
+      </select>
+      <label style="grid-column-start: 1; grid-column-end: 3;">
+        <input type="checkbox" name="active" id="active" {{#if user.active}}checked="checked"{{/if}}> Active
+      </label>
+      {{/if}}
+      <label for="passwordChange">Change Password:</label>
+      <input type="password" name="passwordChange" id="passwordChange" autocomplete="off"> <!-- TODO toggle cleartext -->
+      <label for="passwordConfirm">Repeat password:</label>
+      <input type="password" name="passwordConfirm" id="passwordConfirm" autocomplete="off"> <!-- TODO toggle cleartext -->
+    </div>
+    
+    <div class="flex flex-row justify-center">
+      <button type="submit" style="width: min(95vw, 22em); margin: 1em 0;">Save Changes</button>
+    </div>
+  </form>
+
+  {{#if message}}
+  <p class="{{severity}}">{{message}}</p>
   {{/if}}
-  <button type="submit">Save Changes</button>
-</form>
-
-{{#if message}}
-<p class="{{severity}}">{{message}}</p>
-{{/if}}
+</div>
 
 <script>
   // remove ?saved=1 for next reload

@@ -130,16 +130,23 @@
         right: .5rem;
         list-style: none;
         min-width: 12em;
-        }
-        .gap-1 {
-          gap: .25em;
-        }
-        .gap-2 {
-          gap: .5em;
-        }
-        .gap-3 {
-          gap: 1em;
-        }
+     }
+     .gap-1 {
+         gap: .25em;
+     }
+     .gap-2 {
+         gap: .5em;
+     }
+     .gap-3 {
+         gap: 1em;
+     }
+     .formfields {
+         display: grid;
+         grid-template-columns: auto 1fr;
+         gap: .5em;
+         align-items: baseline;
+         margin-top: 1em;
+     }
     </style>
   </head>
   <body>
@@ -150,6 +157,7 @@
       <button class="avatar" popovertarget="avatarmenu">🫅</button>
     </div>
     <ul id="avatarmenu" popover>
+      <li class="pa2 bb"><a href="/menu">Main Menu</a></li>
       {{#if isAdmin}}
           <li class="pa2 bb"><a href="/config">Configuration</a></li>
       {{/if}}

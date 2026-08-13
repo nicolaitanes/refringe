@@ -1,10 +1,18 @@
 {{> header title="Log In - Allentown ReFringe" }}
 {{> breadcrumb title="Log In" }}
 
-<form action="/auth" method="POST" enctype="multipart/form-data">
-  <input type="text" name="username" id="username" value="{{ auth.u }}">
-  <input type="password" name="password" id="password"> <!-- TODO toggle cleartext -->
-  <button type="submit">Log In</button>
-</form>
-
-<a href="/signup">Create an Account</a>
+<div class="ma1">
+  <form action="/auth" method="POST" enctype="multipart/form-data">
+    <div class="formfields">
+      <label for="username">Username:</label>
+      <input type="text" name="username" id="username" value="{{ auth.u }}">
+      <label for="password">Password:</label>
+      <input type="password" name="password" id="password"> <!-- TODO toggle cleartext -->
+    </div>
+    <div class="flex flex-row justify-center">
+      <button type="submit" style="width: min(95vw, 22em); margin: 1em 0;">Log In</button>
+    </div>
+  </form>
+  
+  <a href="/signup">Create an Account</a>
+</div>

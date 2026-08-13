@@ -1,8 +1,16 @@
 {{> header title="Allentown ReFringe" }}
 {{> breadcrumb title="Initial Setup" }}
 
-<form action="/setup" method="POST" enctype="multipart/form-data">
-  <input type="text" name="username" id="username" value="{{ auth.u }}">
-  <input type="password" name="password" id="password"> <!-- TODO toggle cleartext -->
-  <button type="submit">Set Up</button>
-</form>
+<div class="ma1">
+  <form action="/setup" method="POST" enctype="multipart/form-data">
+    <div style="display: grid; grid-template-columns: auto 1fr; gap: .5em; align-items: baseline; margin-top: 1em;">
+      <label for="username">New Admin Username:</label>
+      <input type="text" name="username" id="username" value="{{ auth.u }}">
+      <label for="password">Password:</label>
+      <input type="password" name="password" id="password"> <!-- TODO toggle cleartext -->
+    </div>
+    <div class="flex flex-row justify-center">
+      <button type="submit" style="width: min(95vw, 22em); margin: 1em 0;">Set Up</button>
+    </div>
+  </form>
+</div>
