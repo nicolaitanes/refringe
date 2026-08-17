@@ -1,0 +1,4 @@
+-- proposals
+--   id, active, userid, title, status, updated
+-- proposalanswers
+--   proposalid, questionid, answer

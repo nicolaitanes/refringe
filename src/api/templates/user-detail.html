@@ -2,3 +2,14 @@
 {{> breadcrumb title="Users" backlink="/users" }}
 
 <h2>{{ user.fullname }}</h2>
+
+<div class="answers">
+    {{#each answers}}
+    {{#if ispublic}}
+    <div class="qa">
+        <span class="question">{{ question }}</span>
+        <span class="answer">{{ answer }}</span>
+    </div>
+    {{/if}}
+    {{/each}}
+</div>

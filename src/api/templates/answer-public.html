@@ -1,0 +1,18 @@
+{{#with item}}
+    <div class="qa">
+        <span class="question">{{ question }}</span>
+        <span class="answer">{{ answer }}</span>
+    </div>
+
+    {{#if children}}
+        <details class="children">
+            <div class="answers">
+                {{#each children}}
+                    {{#if ispublic}}
+                        {{> answer-public item=this }}
+                    {{/if}}
+                {{/each}}
+            </div>
+        </details>
+    {{/if}}
+{{/with}}

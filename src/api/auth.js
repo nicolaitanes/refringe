@@ -1,4 +1,5 @@
 import { renderTemplate } from './templates.js';
+import { questionsDB } from './questions.js';
 import { usersDB } from './users.js';
 import multer from 'multer';
 
@@ -146,14 +147,21 @@ export const initAuth = app => {
     
     app.get('/user/:id', async (req, res) => {
         const user = await usersDB.getByID(req.params.id);
-        const roles = await usersDB.listRoles();
         if (!user) return res.status(404).send('Not found');
+        const roles = await usersDB.listRoles();
+        const answers = await questionsDB.listAnswers({ userid: user.id });
         const isAdmin = req.params.id !== req.auth.u; // meaning here: administering another user -- can't change own roleid or active
         const canEdit = req.auth.l === 0 || !isAdmin;
         return renderTemplate({
             isAdmin,
             user,
             roles,
+            answers: answers.map(a => ({
+                ...a,
+                isChoices: !a.fieldtype && !!a.choices?.length,
+                isTextarea: a.fieldtype === 'text',
+                isYesno: a.fieldtype === 'yesno'
+            })),
             message: req.query.saved ? 'Changes saved successfully' : '',
             severity: 'success',
             template: canEdit ? 'user-edit' : 'user-detail'
@@ -190,6 +198,14 @@ export const initAuth = app => {
                 r: user.revocation
             });
         }
+
+        const questions = await questionsDB.list({ foruser: true });
+        await Promise.all(questions.map(async (q) => {
+            if (q.fieldname in req.body && req.body[q.fieldname]) {
+                await questionsDB.addOrUpdateAnswer({ questionid: q.id, userid: user.id, answer: req.body[q.fieldname] });
+            }
+        }));
+
         res.redirect(303, '/menu');
     });
     
@@ -235,6 +251,13 @@ export const initAuth = app => {
                 : {}
                )
         });
+
+        const answers = await questionsDB.listAnswers({ userid: id });
+        await Promise.all(answers.map(async (q) => {
+            if (q.fieldname in req.body && (req.body[q.fieldname] || null) !== q.answer) {
+                await questionsDB.addOrUpdateAnswer({ questionid: q.id, userid: user.id, answer: req.body[q.fieldname] });
+            }
+        }));
         
         res.redirect(303, '/user/' + id + '?saved=1');
     });
