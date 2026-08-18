@@ -2,6 +2,10 @@ import { promises as fsp } from 'fs';
 import path from 'path';
 import Handlebars from 'handlebars';
 
+Handlebars.registerHelper('ifEquals', function(arg1, arg2, options) {
+    return (arg1 == arg2) ? options.fn(this) : options.inverse(this);
+});
+
 const templates = {};
 export const initTemplates = async (templatePath) => {
     const templateDir = await fsp.readdir('./templates');
@@ -27,6 +31,6 @@ export const renderTemplate = context => (req, res) => {
     };
     const html = template(fullContext);
     res.set('Content-Type', 'text/html');
-    res.send(Buffer.from(html));
+    res.status(status).send(Buffer.from(html));
 };
 

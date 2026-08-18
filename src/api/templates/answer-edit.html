@@ -1,9 +1,10 @@
 {{#with item}}
     {{#if isTextarea}}
-        <label for="{{ fieldname }}" style="grid-column-start: 1; grid-column-end: 3;">{{ question }}</label>
-        <textarea name="{{ fieldname }}" id="{{ fieldname }}" {{#if required}}required{{/if}} {{#if pattern}}pattern="{{ pattern }}"{{/if}}>{{ answer }}</textarea>
+        <label for="{{ fieldname }}" style="grid-column-start: 1; grid-column-end: 3;">
+          {{#if required}}*{{/if}}{{ question }}</label>
+        <textarea name="{{ fieldname }}" id="{{ fieldname }}" {{#if required}}required{{/if}} {{#if pattern}}pattern="{{ pattern }}"{{/if}} style="grid-column-start: 1; grid-column-end: 3;">{{ answer }}</textarea>
     {{else}}
-        <label for="{{ fieldname }}">{{ question }}</label>
+        <label for="{{ fieldname }}">{{#if required}}*{{/if}}{{ question }}</label>
         {{#if isChoices}}
             <span class="radiogroup">
                 {{#each choices}}
@@ -24,6 +25,7 @@
 
     {{#if children}}
         <details class="children" style="grid-column-start: 1; grid-column-end: 3;">
+            <!-- TODO expand/deactivate based on parent selection -->
             <div class="formfields">
                 {{#each children}}
                     {{> answer-edit item=this }}

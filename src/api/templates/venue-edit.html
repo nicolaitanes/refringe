@@ -1,0 +1,49 @@
+{{> header title="Edit Venue - Allentown ReFringe" }}
+{{> breadcrumb title="Edit Venue" }}
+
+<div class="ma1">
+    <form action="/venues/{{venue.id}}" method="POST" enctype="multipart/form-data">
+        <div class="formfields">
+            {{#if isOrg}}
+            <label for="active" style="grid-column-start: 1; grid-column-end: 3;">
+              <input type="checkbox" name="active" id="active" {{#if venue.active}}checked{{/if}}>
+              Active
+            </label>
+            <label for="status">Status:</label>
+            <select name="status" id="status">
+                <option value="unconfirmed" {{#ifEquals venue.status "unconfirmed"}}selected{{/ifEquals}}>Unconfirmed</option>
+                <option value="confirmed" {{#ifEquals venue.status "confirmed"}}selected{{/ifEquals}}>Confirmed</option>
+                <option value="rejected" {{#ifEquals venue.status "rejected"}}selected{{/ifEquals}}>Rejected</option>
+            </select>
+            {{/if}}
+
+            <label for="name">Name:</label>
+            <input type="text" name="name" id="name" value="{{venue.name}}">
+            <label for="address">Street Address:</label>
+            <input type="text" name="address" id="address" value="{{venue.address}}">
+            <label for="city">City:</label>
+            <input type="text" name="city" id="city" value="{{venue.city}}">
+            <label for="state">State:</label>
+            <input type="text" name="state" id="state" value="{{venue.state}}">
+            <label for="zip">Zip:</label>
+            <input type="text" name="zip" id="zip" value="{{venue.zip}}">
+            <label for="latitude">Latitude:</label>
+            <input type="text" name="latitude" id="latitude" value="{{venue.latitude}}">
+            <label for="longitude">Longitude:</label>
+            <input type="text" name="longitude" id="longitude" value="{{venue.longitude}}">
+            <label for="phone">Phone:</label>
+            <input type="text" name="phone" id="phone" value="{{venue.phone}}">
+            <label for="email">Email:</label>
+            <input type="text" name="email" id="email" value="{{venue.email}}">
+            <label for="website">Website:</label>
+            <input type="text" name="website" id="website" value="{{venue.website}}">
+
+            {{#each questions}}
+                {{> answer-edit item=this }}
+            {{/each}}
+        </div>
+        <div class="flex flex-row justify-center">
+            <button type="submit" style="width: min(95vw, 22em); margin: 1em 0;">Save</button>
+        </div>
+    </form>
+</div>

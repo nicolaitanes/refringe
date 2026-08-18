@@ -1,0 +1,27 @@
+{{> header title="All Proposals - Allentown ReFringe" }}
+{{> breadcrumb title="All Proposals" }}
+
+<div class="ma1">
+    <h3>All Proposals</h3>
+    
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Status</th>
+            <th>Updated</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{#each proposals}}
+        <tr>
+            <td><a href="/proposals/{{id}}">{{title}}</a></td>
+            <td>{{fullname}}</td>
+            <td>{{status}}</td>
+            <td>{{updated}}</td>
+        </tr>
+        {{/each}}
+        </tbody>
+    </table>
+</div>

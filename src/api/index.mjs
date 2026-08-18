@@ -8,8 +8,10 @@ import yargs from 'yargs';
 import { initAuth } from './auth.js';
 import { initTemplates, renderTemplate } from './templates.js';
 import { pgdb } from './pgdb.js';
-import { router as qq } from './questions.js';
+import { router as proposals, proposalsDB } from './proposals.js';
+import { router as questions } from './questions.js';
 import { usersDB } from './users.js';
+import { router as venues, venuesDB } from './venues.js';
 
 const args = yargs.option('verbose', {
     alias: 'v',
@@ -31,7 +33,15 @@ app.use(cookieParser(process.env.COOKIE_SECRET));
 
 initAuth(app);
 
-app.use('/qq', qq);
+app.get('/menu', async (req, res) => {
+    const proposals = await proposalsDB.list({ active: true, userid: req.auth?.u });
+    const venues = await venuesDB.list({ active: true, userid: req.auth?.u });
+    renderTemplate({ template: 'menu', proposals, venues })(req, res);
+});
+
+app.use('/proposals', proposals);
+app.use('/questions', questions);
+app.use('/venues', venues);
 
 app.use(express.json());
 

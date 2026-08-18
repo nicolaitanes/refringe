@@ -22,7 +22,7 @@ pgdb.logEvent = async (op, context, tbl=null) => {
 };
 
 pgdb.add = async (tbl, context, q) => {
-    await pgdb.logEvent('I', result.rows[0] ?? context, tbl);
+    await pgdb.logEvent('I',  context, tbl);
     const result = await pgdb.query(q);
     return result.rows[0];
 };

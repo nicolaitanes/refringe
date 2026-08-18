@@ -8,12 +8,31 @@
 </style>
 
 <nav>
-  <!-- e.g.
   <ul class="flex flex-column">
+    <li>
+      <h4>Proposals</h4>
+      <ul>
+        {{#each proposals}}
+        <li><a href="/proposals/{{this.id}}">{{title}}</a></li>
+        {{/each}}
+      </ul>
+      <a href="/proposals/new">Add Proposal</a>
+    </li>
     {{#if isOrg}}
-    <li><a href="/users">Users</a></li>
+    <li><a href="/proposals">All Proposals</a></li>
+    {{/if}}
+    <li>
+      <h4>Venues</h4>
+      <ul>
+        {{#each venues}}
+        <li><a href="/venues/{{this.id}}">{{name}}</a></li>
+        {{/each}}
+      </ul>
+      <a href="/venues/new">Add Venue</a>
+    </li>
+    {{#if isOrg}}
+    <li><a href="/venues">All Venues</a></li>
     {{/if}}
   </ul>
-  -->
 </nav>
 

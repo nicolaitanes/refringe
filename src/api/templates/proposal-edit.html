@@ -1,0 +1,32 @@
+{{> header title="Edit Proposal - Allentown ReFringe" }}
+{{> breadcrumb title="Edit Proposal" }}
+
+<div class="ma1">
+    <form action="/proposals/{{ proposal.id }}" method="POST" enctype="multipart/form-data">
+        <div class="formfields">
+            {{#if isOrg}}
+            <label for="active" style="grid-column-start: 1; grid-column-end: 3;">
+              <input type="checkbox" name="active" id="active" {{#if proposal.active}}checked{{/if}}>
+              Active
+            </label>
+            <label for="status">Status:</label>
+            <select name="status" id="status">
+                <option value="draft" {{#ifEquals proposal.status "draft"}}selected{{/ifEquals}}>Draft</option>
+                <option value="submitted" {{#ifEquals proposal.status "submitted"}}selected{{/ifEquals}}>Submitted</option>
+                <option value="accepted" {{#ifEquals proposal.status "accepted"}}selected{{/ifEquals}}>Accepted</option>
+                <option value="rejected" {{#ifEquals proposal.status "rejected"}}selected{{/ifEquals}}>Rejected</option>
+            </select>
+            {{/if}}
+
+            <label for="title">Title:</label>
+            <input type="text" name="title" id="title" value="{{proposal.title}}">
+
+            {{#each questions}}
+                {{> answer-edit item=this }}
+            {{/each}}
+        </div>
+        <div class="flex flex-row justify-center">
+            <button type="submit" style="width: min(95vw, 22em); margin: 1em 0;">Save</button>
+        </div>
+    </form>
+</div>

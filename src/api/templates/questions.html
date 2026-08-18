@@ -1,0 +1,196 @@
+{{> header title="Edit Questions - Allentown ReFringe" }}
+{{> breadcrumb title="Edit Questions" }}
+
+<div class="ma1 question-mgt">
+    <template v-for="section of sections">
+        <div class="section">
+            <h2>[[ section.title ]]</h2>
+            <template v-for="q of section.questions">
+                <div class="question">
+                    <div class="question-text">
+                        [[ q.required ? '*' : '' ]][[ q.question ]]
+                    </div>
+                    <div class="question-controls">
+                        <button @click="editQuestion(q)">Edit</button>
+                        <button @click="addFollowup(q)">Add Followup</button>
+                    </div>
+                    <div v-if="q.editing" class="question-edit">
+                        <label>Active: <input type="checkbox" v-model="q.newActive"></label>
+                        <label>Question: <input type="text" v-model="q.newQuestion"></label>
+                        <label>Field Name: <input type="text" v-model="q.newFieldname"></label>
+                        <label>Field Type:
+                            <select v-model="q.newFieldtype">
+                                <option value="">Text</option>
+                                <option value="textarea">Textarea</option>
+                                <option value="yesno">Yes/No</option>
+                            </select>
+                        </label>
+                        <label>Priority: <input type="number" v-model="q.newPriority"></label>
+                        <label>Choices (comma-separated): <input type="text" v-model="q.newChoices"></label>
+                        <label>Pattern: <input type="text" v-model="q.newPattern"></label>
+                        <label>Required: <input type="checkbox" v-model="q.newRequired"></label>
+                        <label>Public: <input type="checkbox" v-model="q.newPublic"></label>
+                        <button @click="saveQuestion(q)">Save</button>
+                        <button @click="q.editing = false">Cancel</button>
+                    </div>
+                    <div v-if="q.adding" class="question-add">
+                        <label>Question: <input type="text" v-model="q.newQuestion"></label>
+                        <label>Field Name: <input type="text" v-model="q.newFieldname"></label>
+                        <label>Field Type:
+                            <select v-model="q.newFieldtype">
+                                <option value="">Text</option>
+                                <option value="textarea">Textarea</option>
+                                <option value="yesno">Yes/No</option>
+                            </select>
+                        </label>
+                        <label>Priority: <input type="number" v-model="q.newPriority"></label>
+                        <label>Choices (comma-separated): <input type="text" v-model="q.newChoices"></label>
+                        <label>Pattern: <input type="text" v-model="q.newPattern"></label>
+                        <label>Required: <input type="checkbox" v-model="q.newRequired"></label>
+                        <label>Public: <input type="checkbox" v-model="q.newPublic"></label>
+                        <button @click="saveNewQuestion(section.key, q)">Save</button>
+                        <button @click="q.adding = false">Cancel</button>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Add question button -->
+        <button @click="addQuestion(section.key)">Add Question</button>
+    </template>
+</div>
+
+<script type="module">
+    import { computed, createApp, ref } from 'vue';
+
+    const TestApp = {
+        delimiters: ['[[', ']]'],
+        setup() {
+            // injected JSON from the server, containing top-level questions with optional `.children` arrays for followup questions
+            const questions = ref(JSON.parse(`{{{ questions }}}`));
+            const proposalQuestions = computed(() => questions.value.filter(q => q.forproposal));
+            const userQuestions = computed(() => questions.value.filter(q => q.foruser));
+            const venueQuestions = computed(() => questions.value.filter(q => q.forvenue));
+            const sections = computed(() => ({
+                proposal: {
+                    key: 'forproposal',
+                    title: "Proposal Questions",
+                    questions: proposalQuestions.value
+                },
+                user: {
+                    key: 'foruser',
+                    title: "User Questions",
+                    questions: userQuestions.value
+                },
+                venue: {
+                    key: 'forvenue',
+                    title: "Venue Questions",
+                    questions: venueQuestions.value
+                }
+            }));
+
+            return {
+                questions,
+                sections
+            };
+        },
+        methods: {
+            addQuestion(sectionKey) {
+                this.questions.push({
+                    id: sectionKey,
+                    adding: true,
+                    newQuestion: '',
+                    newFieldname: '',
+                    newFieldtype: '',
+                    newPriority: 1,
+                    newChoices: '',
+                    newPattern: '',
+                    newRequired: false,
+                    newPublic: true,
+                    newParentid: null,
+                    [sectionKey]: true
+                });
+            },
+            addFollowup(parentQuestion) {
+                if (!parentQuestion.children) {
+                    parentQuestion.children = [];
+                }
+                parentQuestion.children.push({
+                    adding: true,
+                    newQuestion: '',
+                    newFieldname: '',
+                    newFieldtype: '',
+                    newPriority: 1,
+                    newChoices: '',
+                    newPattern: '',
+                    newRequired: false,
+                    newPublic: true,
+                    newParentid: parentQuestion.id
+                });
+            },
+            editQuestion(question) {
+                question.newActive = question.active;
+                question.newQuestion = question.question;
+                question.newFieldname = question.fieldname;
+                question.newFieldtype = question.fieldtype;
+                question.newPriority = question.priority;
+                question.newChoices = question.choices ? question.choices.join(', ') : '';
+                question.newPattern = question.pattern;
+                question.newRequired = question.required || false;
+                question.newPublic = question.newPublic || false;
+                question.newParentid = question.parentid;
+                question.editing = true;
+            },
+            async saveNewQuestion(sectionKey, question) {
+                const newQuestion = {
+                    question: question.newQuestion,
+                    fieldname: question.newFieldname,
+                    fieldtype: question.newFieldtype,
+                    priority: question.newPriority,
+                    choices: question.newChoices ? question.newChoices.split(',').map(s => s.trim()) : null,
+                    pattern: question.newPattern,
+                    required: question.newRequired || false,
+                    ispublic: question.newPublic || false,
+                    parentid: question.newParentid || null,
+                    [sectionKey]: true
+                };
+                await fetch('/questions/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(newQuestion)
+                });
+                this.questions.splice(this.questions.findIndex(q => q.id === sectionKey), 1, newQuestion);
+            },
+            async saveQuestion(question) {
+                const updatedQuestion = {
+                    ...question,
+                    editing: false,
+                    id: question.id,
+                    active: question.newActive,
+                    question: question.newQuestion,
+                    fieldname: question.newFieldname,
+                    fieldtype: question.newFieldtype,
+                    priority: question.newPriority,
+                    choices: question.newChoices ? question.newChoices.split(',').map(s => s.trim()) : null,
+                    pattern: question.newPattern,
+                    required: question.newRequired || false,
+                    ispublic: question.newPublic || false,
+                    parentid: question.newParentid || null
+                };
+                await fetch(`/questions/${question.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updatedQuestion)
+                });
+                this.questions.splice(this.questions.findIndex(q => q.id === question.id), 1, updatedQuestion);
+            },
+        }
+    }
+
+  createApp(TestApp).mount('div.question-mgt');
+
+</script>

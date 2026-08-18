@@ -156,12 +156,7 @@ export const initAuth = app => {
             isAdmin,
             user,
             roles,
-            answers: answers.map(a => ({
-                ...a,
-                isChoices: !a.fieldtype && !!a.choices?.length,
-                isTextarea: a.fieldtype === 'text',
-                isYesno: a.fieldtype === 'yesno'
-            })),
+            answers,
             message: req.query.saved ? 'Changes saved successfully' : '',
             severity: 'success',
             template: canEdit ? 'user-edit' : 'user-detail'
@@ -199,7 +194,7 @@ export const initAuth = app => {
             });
         }
 
-        const questions = await questionsDB.list({ foruser: true });
+        const questions = await questionsDB.list({ active: true, foruser: true });
         await Promise.all(questions.map(async (q) => {
             if (q.fieldname in req.body && req.body[q.fieldname]) {
                 await questionsDB.addOrUpdateAnswer({ questionid: q.id, userid: user.id, answer: req.body[q.fieldname] });

@@ -1,36 +1,46 @@
 import express from 'express';
 import SQL from 'sql-template-strings'
 import { pgdb } from './pgdb.js';
+import { proposalsDB } from './proposals.js';
 import { renderTemplate } from './templates.js';
 
 export const questionsDB = {
     async list(q) {
         const whereParts = [];
-        if (q.active) whereParts.push('active = true');
-        if (q.forproposal) whereParts.push('forproposal = true');
-        if (q.forvenue) whereParts.push('forvenue = true');
-        const result = await pgdb.query(SQL`select * from questions
-        ${whereParts.length ? 'where ' + whereParts.join(' AND ') : ''}
-        order by forproposal desc, forvenue desc, priority, fieldname`);
-        return result.rows;
+        const query = SQL`select * from questions where 1=1`;
+        if (q.active) query.append(SQL` and active = true`);
+        if (q.forproposal) query.append(SQL` and forproposal = true`);
+        if (q.foruser) query.append(SQL` and foruser = true`);
+        if (q.forvenue) query.append(SQL` and forvenue = true`);
+        query.append(SQL` order by forproposal desc, foruser desc, forvenue desc, priority, fieldname`);
+        const result = await pgdb.query(query);
+        return result.rows.map(a => ({
+            ...a,
+            isChoices: !a.fieldtype && !!a.choices?.length,
+            isTextarea: a.fieldtype === 'textarea',
+            isYesno: a.fieldtype === 'yesno'
+        }));
     },
     async add(q) {
         return await pgdb.add('questions', q, SQL`insert into questions (
-            required, ispublic, parentid, forproposal, forvenue, priority,
+            required, ispublic, parentid, forproposal, foruser, forvenue, priority,
             fieldname, fieldtype, choices, pattern, question
         ) values (
-            ${q.required || false}, ${q.ispublic || false}, ${q.parentid || null}, ${q.forproposal || false}, ${q.forvenue || false}, ${q.priority || 0},
-            ${q.fieldname}, ${q.choices || null}, ${q.pattern || null}, ${q.question}
+            ${q.required || false}, ${q.ispublic || false}, ${q.parentid || null}, ${q.forproposal || false}, ${q.foruser || false}, ${q.forvenue || false}, ${q.priority || 0},
+            ${q.fieldname}, ${q.fieldtype}, ${q.choices || null}, ${q.pattern || null}, ${q.question}
         ) returning *`);
     },
     async update(id, q) {
         return await pgdb.update('questions', id, q, SQL`update questions set
+        active = ${q.active},
         required = ${q.required},
-        ispublic = ${q.ispublic}
+        ispublic = ${q.ispublic},
         forproposal = ${q.forproposal},
+        foruser = ${q.foruser},
         forvenue = ${q.forvenue},
         priority = ${q.priority},
         fieldname = ${q.fieldname},
+        fieldtype = ${q.fieldtype},
         choices = ${q.choices},
         pattern = ${q.pattern},
         question = ${q.question}
@@ -38,12 +48,15 @@ export const questionsDB = {
     },
     async listAnswers(q) {
         const result =
-            q.proposalid ? await pgdb.query(SQL`select * from proposalanswers a left outer join questions q on a.questionid = q.id and q.forproposal = true where q.active and a.userid = ${q.userid} order by priority, fieldname`) :
-            q.userid ? await pgdb.query(SQL`select * from useranswers a left outer join questions q on a.questionid = q.id and q.foruser = true where q.active and a.userid = ${q.userid} order by priority, fieldname`) :
-            q.venueid ? await pgdb.query(SQL`select * from venueanswers a left outer join questions q on a.questionid = q.id and q.forvenue = true where q.active and a.userid = ${q.userid} order by priority, fieldname`) :
+            q.proposalid ? await pgdb.query(SQL`select * from questions q left outer join proposalanswers a on a.questionid = q.id and a.proposalid = ${q.proposalid} where q.active and q.forproposal order by priority, fieldname`) :
+            q.userid ? await pgdb.query(SQL`select * from questions q left outer join useranswers a on a.questionid = q.id and a.userid = ${q.userid} where q.active and q.foruser order by priority, fieldname`) :
+            q.venueid ? await pgdb.query(SQL`select * from questions q left outer join venueanswers a on a.questionid = q.id and a.venueid = ${q.venueid} where q.active and q.forvenue order by priority, fieldname`) :
             [];
         return result.rows.map(qa => ({
             ...qa,
+            isChoices: !qa.fieldtype && !!qa.choices?.length,
+            isTextarea: qa.fieldtype === 'textarea',
+            isYesno: qa.fieldtype === 'yesno',
             answer: qa.answer || '',
             proposalid: q.proposalid,
             userid: q.userid,
@@ -67,9 +80,12 @@ export const questionsDB = {
 
 function parseQuestion(body) {
     return {
+        active: !!body.active,
         required: !!body.required,
+        ispublic: !!body.ispublic,
         parentid: body.parentid ? `${body.parentid}` : null,
         forproposal: !!body.forproposal,
+        foruser: !!body.foruser,
         forvenue: !!body.forvenue,
         priority: +(body.priority ?? 1),
         fieldname: `${body.fieldname || ''}`,
@@ -103,8 +119,9 @@ export const router = express.Router();
 router.use(express.json());
 
 router.get('/', async (req, res) => {
-    let questions = nestQuestions(await questionsDB.list(req.query));
-    res.json({ questions });
+    const questions = nestQuestions(await questionsDB.list(req.query));
+    if (req.headers.accept?.includes('application/json')) return res.json({ questions });
+    return renderTemplate({ template: 'questions', questions: JSON.stringify(questions).replace(/\\/g, '\\\\') })(req, res);
 });
 
 router.post('/', async (req, res) => {
@@ -119,7 +136,7 @@ router.post('/', async (req, res) => {
     }
 });
 
-router.post('/:id', async (req, res) => {
+router.put('/:id', async (req, res) => {
     if (!req.auth || req.auth.l > 10) return res.status(403).send('Forbidden');
     try {
         const q = parseQuestion(req.body);
@@ -148,7 +165,15 @@ router.get('/venue/:id', async (req, res) => {
 });
 
 router.post('/proposal/:id', async(req, res) => {
-    // TODO verify admin or proposal owner
+    const proposal = await proposalsDB.get(req.params.id);
+    if (!proposal) return res.status(404).send('Not Found');
+    if (!req.auth || (req.auth.l > 10 && req.auth.u !== proposal.userid)) return res.status(403).send('Forbidden');
+    await questionsDB.addOrUpdateAnswer({
+        questionid: req.body.questionid,
+        proposalid: req.params.id,
+        answer: req.body.answer || null
+    });
+    return res.status(204).send();
 });
 
 router.post('/user/:id', async (req, res) => {
@@ -163,5 +188,13 @@ router.post('/user/:id', async (req, res) => {
 });
 
 router.post('/venue/:id', async(req, res) => {
-    // TODO verify admin or venue owner
+    const venue = await venuesDB.get(req.params.id);
+    if (!venue) return res.status(404).send('Not Found');
+    if (!req.auth || (req.auth.l > 10 && req.auth.u !== venue.userid)) return res.status(403).send('Forbidden');
+    await questionsDB.addOrUpdateAnswer({
+        questionid: req.body.questionid,
+        venueid: req.params.id,
+        answer: req.body.answer || null
+    });
+    return res.status(204).send();
 });
