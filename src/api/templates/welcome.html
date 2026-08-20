@@ -2,12 +2,13 @@
 {{> breadcrumb title="Initial Setup" }}
 
 <div class="ma1">
-  <form action="/setup" method="POST" enctype="multipart/form-data">
+  <form class="submitonce" action="/setup" method="POST" enctype="multipart/form-data">
     <div style="display: grid; grid-template-columns: auto 1fr; gap: .5em; align-items: baseline; margin-top: 1em;">
       <label for="username">New Admin Username:</label>
-      <input type="text" name="username" id="username" value="{{ auth.u }}">
+      <input type="text" name="username" id="username" value="{{ auth.n }}">
       <label for="password">Password:</label>
-      <input type="password" name="password" id="password"> <!-- TODO toggle cleartext -->
+      <input type="password" name="password" id="password">
+      <button type="button" class="togglecleartext">👁</button>
     </div>
     <div class="flex flex-row justify-center">
       <button type="submit" style="width: min(95vw, 22em); margin: 1em 0;">Set Up</button>

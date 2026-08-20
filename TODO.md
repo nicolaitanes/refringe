@@ -3,12 +3,18 @@
 ## Definitely
 
 - [ ] tags
-- [ ] tag editing
-- [ ] tag components
+    - [ ] db
+    - [ ] api
+    - [ ] tag editing
+    - [ ] tag components
 - [ ] notes
-- [ ] note components
+    - [ ] db
+    - [ ] api
+    - [ ] note components
 - [ ] calendars
-- [ ] calendar components
+    - [ ] db
+    - [ ] api
+    - [ ] components
 - [ ] schedule output
 - [ ] schedule preview/admin tools
 - [ ] schedule addons
@@ -23,8 +29,8 @@
 
 ## Refinements
 
-- [ ] toggle cleartext password
-- [ ] prevent double-submit
+- [x] toggle cleartext password
+- [x] prevent double-submit
 - [ ] question editor
      - [ ] layout
      - [ ] saving / disabled

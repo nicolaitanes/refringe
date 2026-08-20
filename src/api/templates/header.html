@@ -146,8 +146,38 @@
          gap: .5em;
          align-items: baseline;
          margin-top: 1em;
-     }
+    }
+    #password,
+    #passwordChange {
+        anchor-name: --password-input;
+    }
+    .togglecleartext {
+        display: none;
+        position: absolute;
+        position-anchor: --password-input;
+        position-area: center right;
+        margin-left: -2em;
+        border-radius: .25em;
+        background: transparent;
+    }
     </style>
+    <script>
+      window.addEventListener('load', () => {
+          for (const btn of document.querySelectorAll('.togglecleartext')) {
+              btn.style.display = 'block';
+              const pw = btn.parentNode.querySelector('#password') ??
+                    btn.parentNode.querySelector('#passwordChange');
+              btn.addEventListener('click', ev => {
+                  pw.type = pw.type === 'password' ? 'text' : 'password';
+              });
+          }
+          for (const form of document.querySelectorAll('form.submitonce')) {
+              form.addEventListener('submit', ev => {
+                  ev.submitter.disabled = true;
+              });
+          }
+      });
+    </script>
   </head>
   <body>
 

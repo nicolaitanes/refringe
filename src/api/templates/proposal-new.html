@@ -2,7 +2,7 @@
 {{> breadcrumb title="New Proposal" }}
 
 <div class="ma1">
-    <form action="/proposals" method="POST" enctype="multipart/form-data">
+    <form class="submitonce" action="/proposals" method="POST" enctype="multipart/form-data">
         <div class="formfields">
             <label for="title">Title:</label>
             <input type="text" name="title" id="title" value="{{proposal.title}}">

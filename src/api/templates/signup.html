@@ -2,12 +2,13 @@
 {{> breadcrumb title="Sign Up" }}
 
 <div class="ma1">
-  <form action="/user" method="POST" enctype="multipart/form-data">
+  <form class="submitonce" action="/user" method="POST" enctype="multipart/form-data">
     <div class="formfields">
       <label for="username">Username:</label>
       <input type="text" name="username" id="username" value="{{user.username}}">
       <label for="password">Password:</label>
-      <input type="password" name="password" id="password"> <!-- TODO toggle cleartext -->
+      <input type="password" name="password" id="password">
+      <button type="button" class="togglecleartext">👁</button>
       <label for="fullname">Full Name:</label>
       <input type="text" name="fullname" id="fullname" value="{{user.fullname}}">
       <label for="phone">Phone:</label>
