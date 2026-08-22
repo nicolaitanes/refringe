@@ -18,10 +18,10 @@ const noauthAllowList = new Set([
 ]);
 
 const levelRestricted = {
-    '/configuration': 0, // admin+
-    '/testdb': 0,
-    '/users': 0,
-    // '/my-route': 10 // organizer+
+    '/config': 10, // organizer+
+    '/questions': 10,
+    '/testdb': 0, // admin+
+    '/users': 10,
 };
 
 const issueCookie = (req, res, body) => {
@@ -150,10 +150,10 @@ export const initAuth = app => {
         if (!user) return res.status(404).send('Not found');
         const roles = await usersDB.listRoles();
         const answers = await questionsDB.listAnswers({ userid: user.id });
-        const isAdmin = req.params.id !== req.auth.u; // meaning here: administering another user -- can't change own roleid or active
-        const canEdit = req.auth.l === 0 || !isAdmin;
+        const isSelf = req.params.id === req.auth.u;
+        const canEdit = req.auth.l === 0 || isSelf;
         return renderTemplate({
-            isAdmin,
+            isSelf,
             user,
             roles,
             answers,
@@ -164,11 +164,13 @@ export const initAuth = app => {
     });
     
     app.post('/user', upload.none(), async (req, res) => {
+        const questions = await questionsDB.list({ active: true, foruser: true });
         const renderError = message => renderTemplate({
             message,
             severity: 'error',
             template: 'signup',
-            user: req.body
+            user: req.body,
+            answers: questions.map(q => ({ ...q, answer: req.body[q.fieldname] }))
         })(req, res);
         
         if (req.body.robot !== 'decal') return renderError('Are you a robot?');
@@ -194,7 +196,6 @@ export const initAuth = app => {
             });
         }
 
-        const questions = await questionsDB.list({ active: true, foruser: true });
         await Promise.all(questions.map(async (q) => {
             if (q.fieldname in req.body && req.body[q.fieldname]) {
                 await questionsDB.addOrUpdateAnswer({ questionid: q.id, userid: user.id, answer: req.body[q.fieldname] });
@@ -209,6 +210,7 @@ export const initAuth = app => {
         if (req.auth.l > 0 && id !== req.auth.u) return res.status(403).send('Forbidden');
         
         const isAdmin = req.body.id !== req.auth.u; // meaning here: administering another user -- can't change own roleid or active
+        const answers = await questionsDB.listAnswers({ userid: id });
         const roles = await usersDB.listRoles();
         const renderError = message => {
             const { passwordChange, confirmPassword, ...user } = req.body;
@@ -219,7 +221,8 @@ export const initAuth = app => {
                 template: 'user-edit',
                 isAdmin,
                 user,
-                roles
+                roles,
+                answers: answers.map(q => ({ ...q, answer: req.body[q.fieldname] }))
             })(req, res);
         };
         
@@ -247,10 +250,9 @@ export const initAuth = app => {
                )
         });
 
-        const answers = await questionsDB.listAnswers({ userid: id });
         await Promise.all(answers.map(async (q) => {
             if (q.fieldname in req.body && (req.body[q.fieldname] || null) !== q.answer) {
-                await questionsDB.addOrUpdateAnswer({ questionid: q.id, userid: user.id, answer: req.body[q.fieldname] });
+                await questionsDB.addOrUpdateAnswer({ questionid: q.id, userid: id, answer: req.body[q.fieldname] });
             }
         }));
         

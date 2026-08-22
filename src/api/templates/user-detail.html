@@ -5,11 +5,8 @@
 
 <div class="answers">
     {{#each answers}}
-    {{#if ispublic}}
-    <div class="qa">
-        <span class="question">{{ question }}</span>
-        <span class="answer">{{ answer }}</span>
-    </div>
-    {{/if}}
+      {{#if ispublic}}
+        {{> answer-public item=this }}
+      {{/if}}
     {{/each}}
 </div>

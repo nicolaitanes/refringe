@@ -32,6 +32,12 @@ pgdb.update = async (tbl, id, context, q) => {
     const result = await pgdb.query(q);
     return result.rows[0];
 };
+
+pgdb.upsert = async (tbl, context, q) => {
+    await pgdb.logEvent('P', { ...context, id }, tbl);
+    const result = await pgdb.query(q);
+    return result.rows[0];
+};
     
 
 for (const tbl of ['migrations', 'seeds']) {

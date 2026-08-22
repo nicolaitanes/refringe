@@ -11,6 +11,20 @@
   <form action="/user/{{user.id}}" method="POST" enctype="multipart/form-data">
     <input type="hidden" name="username" id="username" value="{{ user.username }}">
     <div class="formfields">
+      {{#if isSelf}}
+        <input type="hidden" name="active" id="active" value="{{#if user.active}}true{{else}}false{{/if}}">
+      {{else}}
+      <label for="roleid">Role:</label>
+      <select id="roleid" name="roleid" value="{{user.roleid}}">
+        {{#each roles}}
+        <option value="{{id}}">{{name}}</option>
+        {{/each}}
+      </select>
+      <label style="grid-column-start: 1; grid-column-end: 3;">
+        <input type="checkbox" name="active" id="active" {{#if user.active}}checked="checked"{{/if}}> Active
+      </label>
+      {{/if}}
+
       <label for="fullname">Full Name:</label>
       <input type="text" name="fullname" id="fullname" value="{{ user.fullname }}">
       <label for="phone">Phone:</label>
@@ -22,17 +36,6 @@
         {{> answer-edit item=this }}
       {{/each}}
 
-      {{#if isAdmin}}
-      <label for="roleid">Role:</label>
-      <select id="roleid" name="roleid" value="{{user.roleid}}">
-        {{#each roles}}
-        <option value="{{id}}">{{name}}</option>
-        {{/each}}
-      </select>
-      <label style="grid-column-start: 1; grid-column-end: 3;">
-        <input type="checkbox" name="active" id="active" {{#if user.active}}checked="checked"{{/if}}> Active
-      </label>
-      {{/if}}
       <label for="passwordChange">Change Password:</label>
       <input type="password" name="passwordChange" id="passwordChange" autocomplete="off">
       <button type="button" class="togglecleartext">👁</button>
