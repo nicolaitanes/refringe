@@ -1,8 +1,8 @@
 {{> header title=user.username }}
 {{#if isAdmin}}
-{{> breadcrumb title="Users" backlink="/users" }}
+{{> breadcrumb title="Users" backlink="/users" sitename=sitename opengraph=opengraph }}
 {{else}}
-{{> breadcrumb title=user.username }}
+{{> breadcrumb title=user.username sitename=sitename opengraph=opengraph }}
 {{/if}}
 
 <div class="ma1">

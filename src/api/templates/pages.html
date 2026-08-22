@@ -1,4 +1,4 @@
-{{> header title="Edit Pages - Allentown ReFringe" }}
+{{> header title="Edit Pages" sitename=sitename opengraph=opengraph }}
 {{> breadcrumb title="Edit Pages" }}
 
 <div class="ma1 page-mgt flex flex-row">
@@ -26,7 +26,7 @@
     <template v-if="selectedPage.urlpath">
       <div class="formfields">
         <label for="urlpath">Path:</label>
-        <input id="urlpath" name="urlpath" required :value="selectedPage.newUrlpath">
+        <input id="urlpath" name="urlpath" required :value="selectedPage.newUrlpath" @input="updateSelected('newUrlpath', $event.target.value)">
         <label><input type="checkbox" :checked="selectedPage.newActive" @change="updateSelected('newActive', $event.target.checked)"> Active</label>
         <span><a target="_blank" :href="selectedPage.newUrlpath">[[ base + selectedPage.newUrlpath ]]</a></span>
         <button type="submit">Preview</button>

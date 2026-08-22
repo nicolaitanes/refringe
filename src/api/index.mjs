@@ -8,7 +8,7 @@ import yargs from 'yargs';
 import { initAuth } from './auth.js';
 import { initTemplates, renderTemplate } from './templates.js';
 import { pgdb } from './pgdb.js';
-import { router as pages, renderPage } from './pages.js';
+import { getPage, router as pages, renderPage } from './pages.js';
 import { router as proposals, proposalsDB } from './proposals.js';
 import { router as questions } from './questions.js';
 import { usersDB } from './users.js';
@@ -55,7 +55,11 @@ app.get('/testdb', async (req, res) => {
     res.send(Buffer.from(JSON.stringify(result.rows[0], null, 2)));
 });
 
-app.get('/:template', renderTemplate());
+app.get('/:template', async (req, res) => {
+    const siteName = await getPage('(site-name)');
+    return renderTemplate({ siteName })(req, res);
+});
+
 app.get('/', renderTemplate());
 
 app.listen(8080);

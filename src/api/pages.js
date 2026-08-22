@@ -25,8 +25,7 @@ const pagesDB = {
         return result.rows[0];
     },
     async add(q) {
-        const result = await pgdb.add('pages', q, SQL`insert into pages (urlpath, content) values (${q.urlpath}, ${q.content}) returning *`);
-        return result.rows[0];
+        return await pgdb.add('pages', q, SQL`insert into pages (urlpath, content) values (${q.urlpath}, ${q.content}) returning *`);
     },
     async update(id, q) {
         return await pgdb.update('pages', id, q, SQL`update pages set
@@ -42,7 +41,7 @@ export const pages = new Map();
 const pageExpiry = 30_000;
 
 export const flushPage = path => pages.delete(path);
-const getPage = async (path) => {
+export const getPage = async (path) => {
     let entry = pages.get(path);
     if (entry && (new Date().getTime() - entry.timestamp) < pageExpiry) {
         return entry.content;
@@ -63,9 +62,9 @@ export const renderPage = async (req, res) => {
     console.log(req.path);
     const paths = await getPage('_list');
     if (!paths.find(p => p.urlpath === req.path)) return req.next();
-    const [header, footer, raw] = await Promise.all(['(header)', '(footer)', req.path].map(getPage));
+    const [header, footer, sitename, opengraph, raw] = await Promise.all(['(header)', '(footer)', '(site-name)', '(opengraph)', req.path].map(getPage));
     const content = markdownConverter.makeHtml(raw);
-    return renderTemplate({ template: 'page', header, footer, content })(req, res);
+    return renderTemplate({ template: 'page', header, footer, sitename, opengraph, content })(req, res);
 };
 
 export const router = express.Router();
@@ -122,6 +121,6 @@ router.post('/preview', async (req, res) => {
     if (req.headers.accept?.includes('application/json')) {
         return res.json({ content });
     }
-    const [header, footer] = await Promise.all(['(header)', '(footer)'].map(getPage));
-    return renderTemplate({ template: 'page', header, footer, content, title: req.body.title })(req, res);
+    const [header, footer, siteName] = await Promise.all(['(header)', '(footer)', '(site-name)'].map(getPage));
+    return renderTemplate({ template: 'page', header, footer, siteName, content, title: req.body.title })(req, res);
 });
