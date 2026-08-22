@@ -59,7 +59,6 @@ export const getPage = async (path) => {
 };
 
 export const renderPage = async (req, res) => {
-    console.log(req.path);
     const paths = await getPage('_list');
     if (!paths.find(p => p.urlpath === req.path)) return req.next();
     const [header, footer, sitename, opengraph, raw] = await Promise.all(['(header)', '(footer)', '(site-name)', '(opengraph)', req.path].map(getPage));

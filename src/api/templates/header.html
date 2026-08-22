@@ -11,7 +11,8 @@
     <script type="importmap">
     {
         "imports": {
-            "vue": "/js/vue.esm-browser.3.5.38.prod.js"
+            "vue": "/js/vue.esm-browser.3.5.38.prod.js",
+            "confirm-dialog": "/js/confirm-dialog.js"
         }
     }
     </script>
@@ -182,7 +183,7 @@
   </head>
   <body>
 
-   {{#if auth.u}}
+    {{#if auth.u}}
     <div class="usermenu flex flex-row gap-2 f3">
       <span>{{auth.n}}</span>
       <button class="avatar" popovertarget="avatarmenu">🫅</button>

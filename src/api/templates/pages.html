@@ -8,7 +8,7 @@
       <button @click="addPage">+</button>
     </div>
   
-    <select multiple class="flex-grow-1" @change="selectPage">
+    <select multiple class="flex-grow-1" @change="selectPage" :value="selectedPage.id">
       <template v-for="page of sortedPages">
         <option :value="page.id" :selected="page.id === selectedPage.id">[[ page.urlpath ]][[ page.active ? '' : ' (inactive)']]</option>
       </template>
@@ -46,6 +46,7 @@
 
 <script type="module">
     import { computed, createApp, ref } from 'vue';
+    import 'confirm-dialog';
 
     const TestApp = {
         delimiters: ['[[', ']]'],
@@ -82,13 +83,29 @@
                     content: '# Untitled\n\n'
                 });
             },
-            editPage(page) {
+            async editPage(page, isReverting) {
+                if (page.id === this.selectedPage.id && !isReverting) return;
+                
+                if (
+                    !isReverting &&
+                    this.validChanges &&
+                    this.selectedPage.urlpath &&
+                    page.id !== this.selectedPage.id
+                ) {
+                    if (!await confirm(
+                        `Your unsaved changes will be lost.  Switch pages anyway?`,
+                        `Unsaved Changes`,
+                    )) return;
+
+                    this.editPage(this.selectedPage, true); // reverts changes
+                }
+
                 this.selectedPage = page;
                 this.selectedPage.newActive = this.selectedPage.active;
                 this.selectedPage.newUrlpath = this.selectedPage.urlpath;
                 this.selectedPage.newContent = this.selectedPage.content;
             },
-            selectPage(event) {
+            async selectPage(event) {
                 const id = event.target.value;
                 const page = this.pages.find(p => p.id === id);
                 if (page) this.editPage(page);
