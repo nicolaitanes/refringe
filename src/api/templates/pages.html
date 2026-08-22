@@ -1,0 +1,139 @@
+{{> header title="Edit Pages - Allentown ReFringe" }}
+{{> breadcrumb title="Edit Pages" }}
+
+<div class="ma1 page-mgt flex flex-row">
+  <div class="flex flex-column overflow-y-scroll" style="min-width: 8em">
+    <div class="flex flex-row">
+      <h4 class="flex-grow-1">Pages</h4>
+      <button @click="addPage">+</button>
+    </div>
+  
+    <select multiple class="flex-grow-1" @change="selectPage">
+      <template v-for="page of sortedPages">
+        <option :value="page.id" :selected="page.id === selectedPage.id">[[ page.urlpath ]][[ page.active ? '' : ' (inactive)']]</option>
+      </template>
+    </select>
+  </div>
+
+  <form
+    class="flex-grow-1 flex flex-column"
+    style="min-width: 12em"
+    method="POST"
+    action="/pages/preview"
+    enctype="multipart/form-data"
+    target="refringe-preview"
+    >
+    <template v-if="selectedPage.urlpath">
+      <div class="formfields">
+        <label for="urlpath">Path:</label>
+        <input id="urlpath" name="urlpath" required :value="selectedPage.newUrlpath">
+        <label><input type="checkbox" :checked="selectedPage.newActive" @change="updateSelected('newActive', $event.target.checked)"> Active</label>
+        <span><a target="_blank" :href="selectedPage.newUrlpath">[[ base + selectedPage.newUrlpath ]]</a></span>
+        <button type="submit">Preview</button>
+        <button type="button" @click="saveSelected" :disabled="!validChanges">Save</button>
+      </div>
+      <textarea
+        v-if="selectedPage"
+        style="grid-column-start: 1; grid-column-end: 3;"
+        class="flex-grow-1"
+        name="content"
+        :value="selectedPage.newContent"
+        @input="updateSelected('newContent', $event.target.value)"
+      ></textarea>
+    </template>
+  </form>
+</div>
+
+<script type="module">
+    import { computed, createApp, ref } from 'vue';
+
+    const TestApp = {
+        delimiters: ['[[', ']]'],
+        setup() {
+            // injected JSON from the server
+            const pages = ref(JSON.parse(`{{{ pages }}}`));
+            const sortedPages = computed(() => pages.value.slice().sort((a, b) => a.urlpath.localeCompare(b.urlpath) || (!!b.active - !!a.active)));
+            const selectedPage = ref({});
+            const validChanges = computed(() =>
+                selectedPage.value.newUrlpath && (
+                    selectedPage.value.newActive !== selectedPage.value.active ||
+                    selectedPage.value.newUrlpath !== selectedPage.value.urlpath ||
+                    selectedPage.value.newContent !== selectedPage.value.content
+                )
+            );
+
+            return {
+                base: window.location.origin,
+                pages,
+                sortedPages,
+                selectedPage,
+                validChanges
+            };
+        },
+        methods: {
+            addPage() {
+                let serial = 1;
+                const untitled = () => `/untitled${serial > 1 ? '-' + serial : ''}`;
+                while (this.pages.find(p => p.urlpath === untitled())) ++serial;
+                this.editPage({
+                    id: null,
+                    active: true,
+                    urlpath: untitled(),
+                    content: '# Untitled\n\n'
+                });
+            },
+            editPage(page) {
+                this.selectedPage = page;
+                this.selectedPage.newActive = this.selectedPage.active;
+                this.selectedPage.newUrlpath = this.selectedPage.urlpath;
+                this.selectedPage.newContent = this.selectedPage.content;
+            },
+            selectPage(event) {
+                const id = event.target.value;
+                const page = this.pages.find(p => p.id === id);
+                if (page) this.editPage(page);
+            },
+            updateSelected(field, value) {
+                this.selectedPage = {
+                    ...this.selectedPage,
+                    [field]: value
+                };
+            },
+            async saveSelected(event) {
+                const page = {
+                    id: this.selectedPage.id ?? null,
+                    active: this.selectedPage.newActive,
+                    urlpath: this.selectedPage.newUrlpath,
+                    content: this.selectedPage.newContent
+                };
+                let url = '/pages/';
+                if (page.id) url += page.id;
+                const response = await fetch(url, {
+                    method: page.id ? 'PUT' : 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(page)
+                });
+                if (response.status === 200) {
+                    const body = await response.json();
+                    const id = page.id || body.id || null;
+                    const oldPage = this.pages.find(p => p.id === id);
+                    if (oldPage) {
+                        Object.assign(oldPage, body, { id });
+                        if (!id || id === this.selectedPage.id) {
+                            this.editPage(oldPage);
+                        }
+                    } else {
+                        this.pages.push(body);
+                    }
+                } else {
+                    console.error(url, response.status);
+                }
+            },
+        }
+    }
+
+    createApp(TestApp).mount('div.page-mgt');
+
+</script>

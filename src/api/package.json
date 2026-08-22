@@ -17,6 +17,7 @@
     "handlebars": "^4.7.9",
     "multer": "^2.0.1",
     "pg": "^8.22.0",
+    "showdown": "^2.1.0",
     "sql-template-strings": "^2.2.2",
     "yargs": "^15.1.0"
   }

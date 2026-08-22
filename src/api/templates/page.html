@@ -1,0 +1,41 @@
+{{> header title=title }}
+
+<style>
+  h1 {
+      text-align: center;
+      font-size: min(3rem, 7vw);
+      margin-bottom: 0;
+  }
+  strong {
+      color: var(--blurb);
+      font-weight: 600;
+  }
+  p {
+      max-width: min(32rem, 80vw);
+      margin: 1rem auto;
+  }
+
+  img, video {
+      max-width: 95vw;
+  }
+</style>
+
+{{{header}}}
+
+<div class="ma1">
+  {{{content}}}
+</div>
+
+{{{footer}}}
+
+<script>
+  // remove self-links from navigation
+  for (const path of [window.location.href, window.location.pathname]) {
+      for (const link of document.querySelectorAll(`.header li:has(a[href="${path}"])`)) {
+          link.style.display = 'none';
+      }
+      for (const link of document.querySelectorAll(`.footer > a[href="${path}"]`)) {
+          link.style.display = 'none';
+      }
+  }
+</script>

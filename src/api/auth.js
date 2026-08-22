@@ -19,6 +19,7 @@ const noauthAllowList = new Set([
 
 const levelRestricted = {
     '/config': 10, // organizer+
+    '/pages': 10,
     '/questions': 10,
     '/testdb': 0, // admin+
     '/users': 10,

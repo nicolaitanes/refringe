@@ -8,6 +8,7 @@ import yargs from 'yargs';
 import { initAuth } from './auth.js';
 import { initTemplates, renderTemplate } from './templates.js';
 import { pgdb } from './pgdb.js';
+import { router as pages, renderPage } from './pages.js';
 import { router as proposals, proposalsDB } from './proposals.js';
 import { router as questions } from './questions.js';
 import { usersDB } from './users.js';
@@ -31,6 +32,8 @@ app.use(compression());
 app.use(cors({ origin: args.origin }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
+app.use(renderPage);
+
 initAuth(app);
 
 app.get('/menu', async (req, res) => {
@@ -39,6 +42,7 @@ app.get('/menu', async (req, res) => {
     renderTemplate({ template: 'menu', proposals, venues })(req, res);
 });
 
+app.use('/pages', pages);
 app.use('/proposals', proposals);
 app.use('/questions', questions);
 app.use('/venues', venues);
