@@ -20,6 +20,7 @@ export const initTemplates = async (templatePath) => {
 
 export const renderTemplate = context => (req, res) => {
     let template = templates[context?.template || req.params.template || 'index'];
+    if (!template) return res.redirect(303, '/');
     const status = template ? 200 : 404;
     template ??= templates['404'];
     const fullContext = {

@@ -1,16 +1,22 @@
 {{> header title="Edit Pages" sitename=sitename opengraph=opengraph }}
 {{> breadcrumb title="Edit Pages" }}
 
-<div class="ma1 page-mgt flex flex-row">
+<style>
+  .inactive {
+      text-decoration: line-through;
+  }
+</style>
+
+<div class="ma1 page-mgt flex flex-row gap-1">
   <div class="flex flex-column overflow-y-scroll" style="min-width: 8em">
     <div class="flex flex-row">
-      <h4 class="flex-grow-1">Pages</h4>
+      <h4 class="flex-grow-1 tc">Pages</h4>
       <button @click="addPage">+</button>
     </div>
   
     <select multiple class="flex-grow-1" @change="selectPage" :value="selectedPage.id">
       <template v-for="page of sortedPages">
-        <option :value="page.id" :selected="page.id === selectedPage.id">[[ page.urlpath ]][[ page.active ? '' : ' (inactive)']]</option>
+        <option :value="page.id" :class="{ inactive: !page.active }" :selected="page.id === selectedPage.id">[[ page.urlpath ]]</option>
       </template>
     </select>
   </div>
@@ -27,8 +33,10 @@
       <div class="formfields">
         <label for="urlpath">Path:</label>
         <input id="urlpath" name="urlpath" required :value="selectedPage.newUrlpath" @input="updateSelected('newUrlpath', $event.target.value)">
-        <label><input type="checkbox" :checked="selectedPage.newActive" @change="updateSelected('newActive', $event.target.checked)"> Active</label>
-        <span><a target="_blank" :href="selectedPage.newUrlpath">[[ base + selectedPage.newUrlpath ]]</a></span>
+        <span>
+          <label v-if="selectedPage.urlpath[0] === '/' && selectedPage.urlpath[1]"><input type="checkbox" :checked="selectedPage.newActive" @change="updateSelected('newActive', $event.target.checked)"> Active</label>
+        </span>
+        <span><a target="_blank" :href="selectedPage.newUrlpath" :class="{ inactive: !selectedPage.active }">[[ base + selectedPage.newUrlpath ]]</a></span>
         <button type="submit">Preview</button>
         <button type="button" @click="saveSelected" :disabled="!validChanges">Save</button>
       </div>
@@ -138,9 +146,7 @@
                     const oldPage = this.pages.find(p => p.id === id);
                     if (oldPage) {
                         Object.assign(oldPage, body, { id });
-                        if (!id || id === this.selectedPage.id) {
-                            this.editPage(oldPage);
-                        }
+                        this.editPage({ ...oldPage }, true);
                     } else {
                         this.pages.push(body);
                     }

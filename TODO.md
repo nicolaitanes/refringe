@@ -36,8 +36,8 @@
      - [ ] saving / disabled
      - [ ] !q.active / strikethrough
      - [ ] <option>text</option> selected by default
-     - [ ] test various field types, choices
-     - [ ] test followups
+     - [ ] try various field types, choices
+     - [ ] try followups
      - [ ] what about orphan followups?
      - [ ] are public responses shown anywhere? for user/proposal/venue
 

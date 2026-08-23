@@ -34,7 +34,7 @@ pgdb.update = async (tbl, id, context, q) => {
 };
 
 pgdb.upsert = async (tbl, context, q) => {
-    await pgdb.logEvent('P', { ...context, id }, tbl);
+    await pgdb.logEvent('P', context, tbl);
     const result = await pgdb.query(q);
     return result.rows[0];
 };
