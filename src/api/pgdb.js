@@ -22,7 +22,7 @@ pgdb.logEvent = async (op, context, tbl=null) => {
 };
 
 pgdb.add = async (tbl, context, q) => {
-    await pgdb.logEvent('I',  context, tbl);
+    await pgdb.logEvent('I', context, tbl);
     const result = await pgdb.query(q);
     return result.rows[0];
 };
@@ -38,7 +38,17 @@ pgdb.upsert = async (tbl, context, q) => {
     const result = await pgdb.query(q);
     return result.rows[0];
 };
-    
+
+pgdb.delete = async (tbl, id, q, context) => {
+    if (!context && id && !Array.isArray(id)) {
+        const query = SQL`select *`;
+        query.append(` from ${tbl}`);
+        query.append(SQL` where id=${id}`);
+        context = await pgdb.query(query);
+    }
+    await pgdb.logEvent('D', context ?? { id }, tbl);
+    await pgdb.query(q);
+};
 
 for (const tbl of ['migrations', 'seeds']) {
     const result = await pgdb.query('select name from ' + tbl);

@@ -1,0 +1,117 @@
+import express from 'express';
+import SQL from 'sql-template-strings'
+import { pgdb } from './pgdb.js';
+import { renderTemplate } from './templates.js';
+
+export const tagsDB = {
+    async list(q) {
+        const query = SQL`select * from tags t`;
+        query.append(` where 1=1`);
+        if ('active' in q) query.append(SQL` and t.active`);
+        if ('level' in q) {
+            if (q.level > 10) query.append(SQL` and t.is_visible_to_public`)
+        }
+        query.append(`order by active desc, name`);
+        const result = await pgdb.query(query);
+        return result.rows;
+    },
+    async get(id) {
+        const result = await pgdb.query(SQL`select * from tags where id = ${id}`);
+        return result.rows[0];
+    },
+    async add(q) {
+        return await pgdb.add('tags', q, SQL`insert into tags (name, emoji, description, is_visible_to_public) values (${q.name || ''}, ${q.emoji || ''}, ${q.description || ''}, ${!!q.is_visible_to_public}) returning *`);
+    },
+    async update(id, q) {
+        const query = SQL`update tags set active=${!!q.active}, name=${q.name || ''}, emoji=${q.emoji || ''}, description=${q.description || ''}, is_visible_to_public=${!!q.is_visible_to_public} returning *`;
+        return await pgdb.update(id, q, query);
+    },
+    async listLinked(contextType, recordid, q) {
+        const query = SQL`select t.*, `;
+        query.append(`l.${contextType}id from tags t join tags_${contextType}s l on t.id = l.tagid `);
+        query.append(SQL`where l.${contextType}id = ${recordid}`);
+        if ('active' in q) query.append(SQL` and t.active = ${![false, 'false'].includes(q.active)}`);
+        if ('level' in q) {
+            if (q.level > 10) query.append(SQL` and t.is_visible_to_public`)
+        }
+        query.append(` order by active desc, name`);
+        const result = await pgdb.query(query);
+        return result.rows;
+    },
+    async link(id, contextType, recordid) {
+        const query = SQL`insert into `;
+        query.append(`tags_${contextType}s (tagid, ${contextType}id) values `);
+        query.append(SQL`(${id}, ${recordid})`);
+        await pgdb.add(`tags_${contextType}s`, { tagid: id, [contextType+'id']: recordid }, query);
+    },
+    async unlink(id, contextType, recordid) {
+        const query = SQL`delete from `;
+        query.append(`tags_${contextType}s where ${contextType}id `);
+        query.append(SQL`= ${recordid} and tagid = ${id}`);
+        await pgdb.delete(`tags_${contextType}s`, [id, recordid], query, { tagid: id, [contextType+'id']: recordid});
+    }
+};
+
+export const router = express.Router();
+router.use(express.json());
+
+router.get('/', async (req, res) => {
+    const q = { ...req.query, level: req.auth.l };
+    const tags = await tagsDB.list(q);
+    if (req.headers.accept?.includes('application/json')) res.json({ tags });
+    return renderTemplate({ template: 'tags', tags })(req, res);
+});
+
+router.post('/', async (req, res) => {
+    try {
+        const tag = await tagsDB.add({req.body, created_by_userid: req.auth.u });
+        return res.json(tag);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send('Unknown Error');
+    }
+});
+
+router.put('/:id', async (req, res) => {
+    try {
+        const tag = await tagsDB.update(req.params.id, req.body);
+        return res.json(tag);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send('Unknown Error');
+    }
+});
+
+router.get('/:contextType/:recordid', async (req, res) => {
+    const tbl = req.params.contextType;
+    if (!['proposal', 'show', 'user', 'venue'].includes(tbl)) return res.status(400).send('Bad Request');
+    const q = { ...req.query, level: req.auth.l, active: true };
+    const tags = await tagsDB.listLinked(tbl, req.params.recordid, q);
+    return res.json({ tags });
+});
+
+router.put('/:id/:contextType/:recordid', async(req, res) => {
+    try {
+        const tbl = req.params.contextType;
+        if (!['proposal', 'show', 'user', 'venue'].includes(tbl)) return res.status(400).send('Bad Request');
+        await tagsDB.link(req.params.id, tbl, req.params.recordid);
+        return res.status(204).send();
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send('Unknown Error');
+    }
+});
+
+
+router.delete('/:id/:contextType/:recordid', async(req, res) => {
+    try {
+        const tbl = req.params.contextType;
+        if (!['proposal', 'show', 'user', 'venue'].includes(tbl)) return res.status(400).send('Bad Request');
+        await tagsDB.unlink(req.params.id, tbl, req.params.recordid);
+        return res.status(204).send();
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send('Unknown Error');
+    }
+});
+

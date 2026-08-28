@@ -1,8 +1,17 @@
 import express from 'express';
+import showdown from 'showdown';
 import SQL from 'sql-template-strings'
 import { pgdb } from './pgdb.js';
 import { proposalsDB } from './proposals.js';
 import { renderTemplate } from './templates.js';
+
+const markdownConverter = new showdown.Converter({
+    safeMode: true,
+    headerLevelStart: 3,
+    simplifiedAutoLink: true,
+    literalMidWordUnderscores: true,
+    simpleLineBreaks: true,
+});
 
 export const questionsDB = {
     async list(q) {
@@ -69,10 +78,10 @@ export const questionsDB = {
             await pgdb.upsert('proposalanswers', q, SQL`insert into proposalanswers (questionid, proposalid, answer) values (${q.questionid}, ${q.proposalid}, ${q.answer || null})
                 on conflict (questionid, proposalid) do update set answer = excluded.answer`);
         } else if (q.userid) {
-            await pgdb.upsert('proposalanswers', q, SQL`insert into useranswers (questionid, userid, answer) values (${q.questionid}, ${q.userid}, ${q.answer || null})
+            await pgdb.upsert('useranswers', q, SQL`insert into useranswers (questionid, userid, answer) values (${q.questionid}, ${q.userid}, ${q.answer || null})
                 on conflict (questionid, userid) do update set answer = excluded.answer`);
         } else if (q.venueid) {
-            await pgdb.upsert('proposalanswers', q, SQL`insert into venueanswers (questionid, venueid, answer) values (${q.questionid}, ${q.venueid}, ${q.answer || null})
+            await pgdb.upsert('venueanswers', q, SQL`insert into venueanswers (questionid, venueid, answer) values (${q.questionid}, ${q.venueid}, ${q.answer || null})
                 on conflict (questionid, venueid) do update set answer = excluded.answer`);
         }
     }
@@ -96,11 +105,15 @@ function parseQuestion(body) {
     };
 }
 
+// also sets answerHTML for fieldtype 'textarea'
 function nestQuestions(questions) {
     const nested = [];
     const byId = {};
     for (const q of questions) {
         byId[q.id] = q;
+        if (q.fieldtype === 'textarea' && q.answer) {
+            q.answerHTML = markdownConverter.makeHtml(q.answer);
+        }
         if (!q.parentid) {
             nested.push(q);
         } else {

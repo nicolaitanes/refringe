@@ -1,7 +1,11 @@
 {{#with item}}
     <div class="qa">
+      {{#if answerHTML}}
+        {{{ answerHTML }}}
+      {{else}}
         <span class="question">{{ question }}:</span>
         <span class="answer">{{ answer }}</span>
+      {{/if}}
     </div>
 
     {{#if children}}

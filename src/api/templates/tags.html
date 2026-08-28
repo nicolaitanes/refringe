@@ -1,0 +1,81 @@
+{{> header title="Edit Tags" sitename=sitename opengraph=opengraph }}
+{{> breadcrumb title="Edit Tags" }}
+
+<div class="ma1 tag-mgt">
+
+<!-- TODO option to hide inactive -->
+
+  <table>
+    <thead>
+      <tr>
+        <th>Active</th>
+        <th>Name</th>
+        <th>Emoji</th>
+        <th>Description</th>
+        <th>Public</th>
+      </tr>
+    </thead>
+    <tbody>
+      <template v-for="t of tags">
+        <tr>
+          <td><input class="active" type="checkbox" :checked="t.active" @change="updateTag(t.id, 'active', $event.target.checked)"></td>
+          <td><input class="name" :value="t.name" @change="updateTag(t.id, 'name', $event.target.value)"></td>
+          <td><input class="emoji" :value="t.emoji" @change="updateTag(t.id, 'emoji', $event.target.value)"></td>
+          <td><input class="description" :value="t.description" @change="updateTag(t.id, 'description', $event.target.value)"></td>
+          <td><input class="is_visible_to_public" type="checkbox" :checked="t.is_visible_to_public" @change="updateTag(t.id, 'is_visible_to_public', $event.target.checked)"></td>
+        </tr>
+      </template>
+    </tbody>
+  </table>
+  
+  <button @click="addTag()">Add Tag</button>
+</div>
+
+let nextFakeID = -1;
+
+<script type="module">
+    import { computed, createApp, ref } from 'vue';
+
+    const TestApp = {
+        delimiters: ['[[', ']]'],
+        setup() {
+            const tags = ref(JSON.parse(`{{{ tags }}}`));
+
+            return {
+                tags
+            };
+        },
+        methods: {
+            addTag() {
+                this.tags.push({ id: nextFakeID--, active: true, name: '', emoji: '', description: '' });
+                setTimeout(() => document.querySelector('tr[data-id="-1"] input.name')?.focus(), 100);
+            },
+            async updateTag(id, field, value) {
+                if (field === 'name' && !value) return;
+                let tag = this.tags.find(t => t.id === id);
+                const response = Number.isNumber(id)
+                    ? await fetch('/tags/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(tag)
+                    })
+                      : await fetch('/tags/'+id, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: { [field]: value }
+                      });
+                if (!response.ok) {
+                    console.log('Error saving tag');
+                    return;
+                }
+                tag = await response.json();
+                this.tags.splice(this.tags.findIndex(t => t.id === id));
+            },
+        },
+    }
+ 
+
+  createApp(TestApp).mount('div.tag-mgt');
+
+</script>
+

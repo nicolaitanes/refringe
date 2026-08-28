@@ -6,11 +6,12 @@ import SQL from 'sql-template-strings'
 import yargs from 'yargs';
 
 import { initAuth } from './auth.js';
-import { initTemplates, renderTemplate } from './templates.js';
+import { router as notes } from './notes.js';
 import { pgdb } from './pgdb.js';
 import { getPage, router as pages, renderPage } from './pages.js';
 import { router as proposals, proposalsDB } from './proposals.js';
 import { router as questions } from './questions.js';
+import { initTemplates, renderTemplate } from './templates.js';
 import { usersDB } from './users.js';
 import { router as venues, venuesDB } from './venues.js';
 
@@ -42,6 +43,7 @@ app.get('/menu', async (req, res) => {
     renderTemplate({ template: 'menu', proposals, venues })(req, res);
 });
 
+app.use('/notes', notes);
 app.use('/pages', pages);
 app.use('/proposals', proposals);
 app.use('/questions', questions);

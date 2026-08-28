@@ -1,0 +1,33 @@
+create table calendars (
+    id uuid default uuidv7() primary key,
+    name text not null,
+    notes text not null,
+    startdate date,
+    enddate date,
+    active bool not null default true,
+    updated timestamptz not null default now()
+);
+
+create table publiccalendars (
+    id uuid default uuidv7() primary key,
+    name text not null,
+    key text not null,
+    calendarid uuid not null references calendars(id),
+    active bool not null default true,
+    priority integer not null default 100,
+    updated timestamptz not null default now()
+);
+
+create table shows (
+    id uuid default uuidv7() primary key,
+    calendarid uuid not null references calendars(id),
+    proposalid uuid not null references proposals(id),
+    isinstallation bool not null default false,
+    isgroup bool not null default false,
+    groupshowid uuid references shows(id),
+    venueid uuid references venues(id),
+    dateonly date,
+    starttime time without time zone,
+    endtime time without time zone,
+    updated timestamptz not null default now()
+);
