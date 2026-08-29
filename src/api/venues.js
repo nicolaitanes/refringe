@@ -1,6 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import SQL from 'sql-template-strings'
+import { calendarsDB } from './calendars.js';
 import { pgdb } from './pgdb.js';
 import { questionsDB } from './questions.js';
 import { renderTemplate } from './templates.js';
@@ -12,7 +13,6 @@ export const venuesDB = {
         const query = SQL`select v.* from venues v where 1=1`;
         if (q.active) query.append(SQL` and v.active = true`);
         if (q.userid) query.append(SQL` and v.userid = ${q.userid}`);
-        if (q.status) query.append(SQL` and v.status = ${q.status}`);
         query.append(SQL` order by v.name`);
         const result = await pgdb.query(query);
         return result.rows;
@@ -23,16 +23,16 @@ export const venuesDB = {
     },
     async add(q) {
         return await pgdb.add('venues', q, SQL`insert into venues (
-            userid, active, name, status, address, city, state, zip, latitude, longitude, phone, email, website
+            userid, active, name, allcalendars, address, city, state, zip, latitude, longitude, phone, email, website
         ) values (
-            ${q.userid}, ${q.active || true}, ${q.name?.trim()}, ${q.status || 'unconfirmed'}, ${q.address?.trim()}, ${q.city?.trim()}, ${q.state?.trim()}, ${q.zip?.trim()}, ${q.latitude || null}, ${q.longitude || null}, ${q.phone?.trim()}, ${q.email?.trim()}, ${q.website?.trim()}
+            ${q.userid}, ${q.active || true}, ${q.name?.trim()}, ${!!q.allcalendars}, ${q.address?.trim()}, ${q.city?.trim()}, ${q.state?.trim()}, ${q.zip?.trim()}, ${q.latitude || null}, ${q.longitude || null}, ${q.phone?.trim()}, ${q.email?.trim()}, ${q.website?.trim()}
         ) returning *`);
     },
     async update(id, q) {
         return await pgdb.update('venues', id, q, SQL`update venues set
-                active = ${q.active && q.active !== 'false'},
+                active = ${!!q.active},
                 name = ${q.name.trim()},
-                status = ${q.status || 'unconfirmed'},
+                allcalendars = ${!!q.allcalendars},
                 address = ${q.address ? q.address.trim() : null},
                 city = ${q.city ? q.city.trim() : null},
                 state = ${q.state ? q.state.trim() : null},
@@ -53,7 +53,7 @@ function parseVenue(body) {
         userid: body.userid ? `${body.userid}` : null,
         active: !!body.active,
         name: `${body.name || ''}`,
-        status: `${body.status || 'unconfirmed'}`,
+        allcalendars: !!body.allcalendars,
         address: body.address ? `${body.address}` : null,
         city: body.city ? `${body.city}` : null,
         state: body.state ? `${body.state}` : null,
@@ -72,12 +72,12 @@ router.use(upload.none());  // or multipart form data
 
 router.get('/new', async (req, res) => {
     const questions = await questionsDB.list({ active: true, forvenue: true });
-    return renderTemplate({ template: 'venue-new', questions })(req, res);
+    const events = await calendarsDB.list({ active: true, current: true });
+    return renderTemplate({ template: 'venue-new', questions, events })(req, res);
 });
 
 router.get('/', async (req, res) => {
     const venues = await venuesDB.list({
-        active: true,
         ...req.query
     });
     if (req.headers.accept?.includes('application/json')) return res.json({ venues });
@@ -87,13 +87,13 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     const venue = await venuesDB.get(req.params.id);
     if (!venue) return res.status(404).send('Not Found');
-    // TODO also allow when status is beyond a certain point, e.g. published, but not draft or withdrawn
     if (!req.auth || (req.auth.l > 10 && req.auth.u !== venue.userid)) return res.status(403).send('Forbidden');
     // if json requested, return json
     if (req.headers.accept?.includes('application/json')) return res.json(venue);
     // otherwise render with template
     const questions = await questionsDB.listAnswers({ venueid: req.params.id });
-    return renderTemplate({ template: 'venue-edit', venue, questions })(req, res);
+    const events = await calendarsDB.listLinked('venue', req.params.id, true);
+    return renderTemplate({ template: 'venue-edit', venue, questions, events })(req, res);
 });
 
 router.post('/', async (req, res) => {
@@ -110,6 +110,13 @@ router.post('/', async (req, res) => {
                 await questionsDB.addOrUpdateAnswer({ questionid: q.id, venueid: newVenue.id, answer: req.body[q.fieldname] });
             }
         }));
+
+        const events = await calendarsDB.list({ active: true, current: true });
+        for (const ev of events) {
+            if (('c_' + ev.id) in req.body && req.body['c_'+ev.id]) {
+                await calendarsDB.link(ev.id, 'venue', req.params.id);
+            }
+        }
 
         if (req.headers.accept?.includes('application/json')) return res.json(newVenue);
         return res.redirect(303, '/menu');
@@ -131,6 +138,15 @@ router.post('/:id', async (req, res) => {
             }
         }));
 
+        const events = await calendarsDB.listLinked('venue', req.params.id, true);
+        for (const ev of events) {
+            if (('c_' + ev.id) in req.body && req.body['c_'+ev.id] !== ev.active) {
+                if (ev.active) await calendarsDB.unlink(ev.id, 'venue', req.params.id);
+                else await calendarsDB.link(ev.id, 'venue', req.params.id);
+            }
+        }
+        // TODO handle link status if present
+        
         if (req.headers.accept?.includes('application/json')) return res.json(venue);
         return res.redirect(303, '/menu');
     } catch (err) {

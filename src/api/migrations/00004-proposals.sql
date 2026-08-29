@@ -1,9 +1,9 @@
 create table proposals (
     id uuid default uuidv7() primary key,
     active bool not null default true,
+    allcalendars bool not null default false,
     userid uuid not null references users(id),
     title text not null,
-    status text not null default 'draft',
     updated timestamptz not null default now()
 );
 

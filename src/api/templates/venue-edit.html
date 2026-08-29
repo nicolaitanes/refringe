@@ -9,12 +9,6 @@
               <input type="checkbox" name="active" id="active" {{#if venue.active}}checked{{/if}}>
               Active
             </label>
-            <label for="status">Status:</label>
-            <select name="status" id="status">
-                <option value="unconfirmed" {{#ifEquals venue.status "unconfirmed"}}selected{{/ifEquals}}>Unconfirmed</option>
-                <option value="confirmed" {{#ifEquals venue.status "confirmed"}}selected{{/ifEquals}}>Confirmed</option>
-                <option value="rejected" {{#ifEquals venue.status "rejected"}}selected{{/ifEquals}}>Rejected</option>
-            </select>
             {{/if}}
 
             <label for="name">Name:</label>
@@ -42,6 +36,23 @@
                 {{> answer-edit item=this }}
             {{/each}}
         </div>
+
+        <h3>Events:</h3>
+
+        <div class="flex flex-column gap-1">
+          <div>
+            <label><input name="allcalendars" id="allcalendars" type="checkbox" checked="{{ allcalendars }}"><i>All Events</i></label>
+          </div>
+          {{#each events}}
+          <div class="flex flex-column">
+            <label>
+              <input name="c_{{id}}" type="checkbox" checked="{{ active }}">>{{name}}
+            </label>
+            <div>{{ startdate }} - {{ enddate }}</div>
+            <div>{{ notes }}</div>
+          {{/each}}
+        </div>
+        
         <div class="flex flex-row justify-center">
             <button type="submit" style="width: min(95vw, 22em); margin: 1em 0;">Save</button>
         </div>

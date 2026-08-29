@@ -18,11 +18,15 @@ const noauthAllowList = new Set([
 ]);
 
 const levelRestricted = {
-    '/config': 10, // organizer+
+    '/calendars': 10, // organizer+
+    '/calendars/public': 10, // organizer+
+    '/config': 10,
     '/pages': 10,
     '/questions': 10,
+    '/tags': 10,
     '/testdb': 0, // admin+
     '/users': 10,
+    '/venues': 10
 };
 
 const issueCookie = (req, res, body) => {

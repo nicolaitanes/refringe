@@ -6,6 +6,7 @@ import SQL from 'sql-template-strings'
 import yargs from 'yargs';
 
 import { initAuth } from './auth.js';
+import { router as calendar } from './calendar.js';
 import { router as notes } from './notes.js';
 import { pgdb } from './pgdb.js';
 import { router as pages, renderPage } from './pages.js';
@@ -44,6 +45,7 @@ app.get('/menu', async (req, res) => {
     renderTemplate({ template: 'menu', proposals, venues })(req, res);
 });
 
+app.use('/calendar', calendar);
 app.use('/notes', notes);
 app.use('/pages', pages);
 app.use('/proposals', proposals);

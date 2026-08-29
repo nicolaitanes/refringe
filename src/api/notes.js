@@ -76,7 +76,9 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
     try {
-        const note = await notesDB.add({ ...req.body, created_by_userid: req.auth.u });
+        const q = { ...req.body, created_by_userid: req.auth.u };
+        if (!req.auth || req.auth.l > 10) q.is_visible_to_public = false;
+        const note = await notesDB.add(q);
         return res.json(note);
     } catch (err) {
         console.log(err);
@@ -86,8 +88,10 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
     try {
-        const note = await notesDB.update(req.params.id, req.body);
-        return res.json(note);
+        const note = await notesDB.get(req.params.id);
+        if (req.auth?.u !== note.created_by_userid) return res.status(403).send('Forbidden');
+        const newNote = await notesDB.update(req.params.id, req.body);
+        return res.json(newNote);
     } catch (err) {
         console.log(err);
         return res.status(500).send('Unknown Error');
@@ -96,6 +100,8 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async(req, res) => {
     try {
+        const note = await notesDB.get(req.params.id);
+        if (!req.auth || !(req.auth.u === note.created_by_userid || req.auth.l <= 10)) return res.status(403).send('Forbidden');
         await notesDB.delete(req.params.id);
         return res.status(204).send();
     } catch (err) {

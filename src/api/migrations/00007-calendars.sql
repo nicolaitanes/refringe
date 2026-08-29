@@ -18,8 +18,25 @@ create table publiccalendars (
     updated timestamptz not null default now()
 );
 
+create table calendars_proposals (
+    calendarid uuid not null references calendars(id),
+    proposalid uuid not null references proposals(id),
+    active bool not null default true,
+    status text not null default 'unconfirmed',
+    primary key(calendarid, proposalid)
+);
+
+create table calendars_venues (
+    calendarid uuid not null references calendars(id),
+    venueid uuid not null references venues(id),
+    active bool not null default true,
+    status text not null default 'unconfirmed',
+    primary key(calendarid, venueid)
+);
+
 create table shows (
     id uuid default uuidv7() primary key,
+    active bool not null default true,
     calendarid uuid not null references calendars(id),
     proposalid uuid not null references proposals(id),
     isinstallation bool not null default false,

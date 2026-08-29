@@ -29,6 +29,23 @@
                 {{> answer-edit item=this }}
             {{/each}}
         </div>
+
+        <h3>Events:</h3>
+
+        <div class="flex flex-column gap-1">
+          <div>
+            <label><input name="allcalendars" id="allcalendars" type="checkbox" checked="{{ allcalendars }}"><i>All Events</i></label>
+          </div>
+          {{#each events}}
+          <div class="flex flex-column">
+            <label>
+              <input name="c_{{id}}" type="checkbox" checked="{{ active }}">>{{name}}
+            </label>
+            <div>{{ startdate }} - {{ enddate }}</div>
+            <div>{{ notes }}</div>
+          {{/each}}
+        </div>
+        
         <div class="flex flex-row justify-center">
             <button type="submit" style="width: min(95vw, 22em); margin: 1em 0;">Save</button>
         </div>

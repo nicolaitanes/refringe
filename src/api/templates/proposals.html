@@ -9,7 +9,6 @@
         <tr>
             <th>Title</th>
             <th>Author</th>
-            <th>Status</th>
             <th>Notes</th>
             <th>Tags</th>
             <th>Updated</th>
@@ -20,7 +19,6 @@
         <tr>
             <td><a href="/proposals/{{prop.id}}">{{prop.title}}</a></td>
             <td>{{prop.fullname}}</td>
-            <td>{{prop.status}}</td>
             <td><notes-button level="{{auth.l}}" proposalid="{{prop.id}}"></notes-button></td>
             <td><tag-chip entity-type="proposal" :entityid="'{{prop.id}}'" class-name="proposal-tags"></tag-chip></td>
             <td>{{prop.updated}}</td>

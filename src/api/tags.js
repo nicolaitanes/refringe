@@ -78,6 +78,7 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
+    if (!req.auth || req.auth.l > 10) return res.status(403).send('Forbidden');
     try {
         const tag = await tagsDB.add({ ...req.body, created_by_userid: req.auth.u });
         return res.json(tag);
@@ -88,6 +89,7 @@ router.post('/', async (req, res) => {
 });
 
 router.put('/:id', async (req, res) => {
+    if (!req.auth || req.auth.l > 10) return res.status(403).send('Forbidden');
     try {
         const tag = await tagsDB.update(req.params.id, req.body);
         return res.json(tag);
@@ -106,6 +108,7 @@ router.get('/:contextType/:recordid', async (req, res) => {
 });
 
 router.put('/:id/:contextType/:recordid', async(req, res) => {
+    if (!req.auth || req.auth.l > 10) return res.status(403).send('Forbidden');
     try {
         const tbl = req.params.contextType;
         if (!['proposal', 'show', 'user', 'venue'].includes(tbl)) return res.status(400).send('Bad Request');
@@ -119,6 +122,7 @@ router.put('/:id/:contextType/:recordid', async(req, res) => {
 
 
 router.delete('/:id/:contextType/:recordid', async(req, res) => {
+    if (!req.auth || req.auth.l > 10) return res.status(403).send('Forbidden');
     try {
         const tbl = req.params.contextType;
         if (!['proposal', 'show', 'user', 'venue'].includes(tbl)) return res.status(400).send('Bad Request');
