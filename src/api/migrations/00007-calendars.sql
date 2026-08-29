@@ -1,19 +1,23 @@
 create table calendars (
     id uuid default uuidv7() primary key,
+    active bool not null default true,
     name text not null,
     notes text not null,
     startdate date,
     enddate date,
-    active bool not null default true,
+    deadline date,
+    callforwork text,
+    calling_public bool not null default false,
+    calling_users bool not null default false,
     updated timestamptz not null default now()
 );
 
 create table publiccalendars (
     id uuid default uuidv7() primary key,
-    name text not null,
+    publicname text not null,
     key text not null,
     calendarid uuid not null references calendars(id),
-    active bool not null default true,
+    ispublic bool not null default true,
     priority integer not null default 100,
     updated timestamptz not null default now()
 );

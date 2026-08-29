@@ -6,7 +6,7 @@
     - [x] db
     - [x] api
     - [x] tag components
-    - [ ] tag editing
+    - [x] tag editing
     - [ ] tags on proposals, users, venues
 - [ ] notes
     - [x] db
@@ -14,16 +14,15 @@
     - [x] note components
     - [ ] org. notes on proposals, users, venues
 - [ ] calendars
-    - [ ] db
+    - [x] db
         - [x] ported
-        - [ ] deadline
-        - [ ] call_for_work
-        - [ ] calling_public
-        - [ ] calling_proposers
-        - [ ] calendars_proposals with status (no proposal status)
-        - [ ] calendars_venues with status
-        - [ ] {calendar, venue}.for_future_calendars
-    - [ ] api
+        - [x] deadline
+        - [x] call_for_work
+        - [x] calling_public, calling_users
+        - [x] calendars_proposals with status (no proposal status)
+        - [x] calendars_venues with status
+        - [x] {calendar, venue}.allcalendars
+    - [x] api
     - [ ] components
         - [ ] port calendar editing
         - [ ] {proposal, venue} check all events that apply
@@ -68,4 +67,5 @@
 - [ ] proposal visibility to other users (by status?)
 - [ ] venue visibility to other users (by status?)
 - [ ] proposal website link
+- [ ] notes on calendars?
 - [ ] .
