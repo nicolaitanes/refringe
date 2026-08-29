@@ -17,7 +17,7 @@
     </thead>
     <tbody>
       <template v-for="t of tags">
-        <tr>
+        <tr :data-id="t.id">
           <td><input class="active" type="checkbox" :checked="t.active" @change="updateTag(t.id, 'active', $event.target.checked)"></td>
           <td><input class="name" :value="t.name" @change="updateTag(t.id, 'name', $event.target.value)"></td>
           <td><input class="emoji" :value="t.emoji" @change="updateTag(t.id, 'emoji', $event.target.value)"></td>
@@ -31,10 +31,10 @@
   <button @click="addTag()">Add Tag</button>
 </div>
 
-let nextFakeID = -1;
-
 <script type="module">
     import { computed, createApp, ref } from 'vue';
+
+    let nextFakeID = -1;
 
     const TestApp = {
         delimiters: ['[[', ']]'],
@@ -53,7 +53,8 @@ let nextFakeID = -1;
             async updateTag(id, field, value) {
                 if (field === 'name' && !value) return;
                 let tag = this.tags.find(t => t.id === id);
-                const response = Number.isNumber(id)
+                tag[field] = value;
+                const response = Number.isFinite(id)
                     ? await fetch('/tags/', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -62,14 +63,14 @@ let nextFakeID = -1;
                       : await fetch('/tags/'+id, {
                           method: 'PUT',
                           headers: { 'Content-Type': 'application/json' },
-                          body: { [field]: value }
+                          body: JSON.stringify({ [field]: value })
                       });
                 if (!response.ok) {
                     console.log('Error saving tag');
                     return;
                 }
                 tag = await response.json();
-                this.tags.splice(this.tags.findIndex(t => t.id === id));
+                this.tags.splice(this.tags.findIndex(t => t.id === id), 1, tag);
             },
         },
     }

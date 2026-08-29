@@ -51,10 +51,10 @@ export default {
             unlinkTagFromShow,
             unlinkTagToUser,
             unlinkTagToVenue,
-            getTagsForProposals,
-            getTagsForShows,
-            getTagsForUsers,
-            getTagsForVenues,
+            getTagsForProposal,
+            getTagsForShow,
+            getTagsForUser,
+            getTagsForVenue,
             formatTagDisplay
         } = tagging;
 
@@ -79,9 +79,9 @@ export default {
         async function loadEntityTags(force=false) {
             try {
                 const tagsRef = tagging[props.entityType + 'Tags'];
-                const loadFunction = tagging['getTagsFor' + props.entityType[0].toUpperCase() + props.entityType.slice(1) + 's'];
+                const loadFunction = tagging['getTagsFor' + props.entityType[0].toUpperCase() + props.entityType.slice(1)];
                 const idField = props.entityType + 'id';
-                if (force || !tagsRef.value.length) await loadFunction();
+                if (force || !tagsRef.value.length) await loadFunction(props.entityid);
                 entityTags.value = tagsRef.value.filter(t => t[idField] === props.entityid);
             } catch (err) {
                 console.error(`Error loading ${props.entityType} tags:`, err);
@@ -225,9 +225,10 @@ export default {
                     v-if="!showSelector"
                     @click="showSelector = true" 
                     class="tag-add-button"
+                    title="Add Tag"
                     :disabled="actionLoading"
                 >
-                    + Add Tag
+                    + 🏷️
                 </button>
 
                 <!-- Tag selector overlay -->

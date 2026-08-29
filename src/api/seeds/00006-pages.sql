@@ -13,7 +13,7 @@ insert into pages (urlpath, content) values
     ),
     (
         '(opengraph)',
-        '    <meta property=\"og:title\" content=\"Allentown ReFringe\" />\n    <meta property=\"og:description\" content=\"Collaborative Arts Showcase\" />\n    <meta property=\"og:site_name\" content=\"ReFringe.org\" />\n    <meta property=\"og:url\" content=\"https://refringe.mandelics.com\" />\n    <meta property=\"og:type\" content=\"website\" />\n    <meta property=\"og:image\" content=\"https://refringe.mandelics.com/img/refringe-ogp2.jpg\" />\n    <meta property=\"og:image:alt\" content=\"ReFringe Flyer\" />\n'
+        E'    <meta property=\"og:title\" content=\"Allentown ReFringe\" />\n    <meta property=\"og:description\" content=\"Collaborative Arts Showcase\" />\n    <meta property=\"og:site_name\" content=\"ReFringe.org\" />\n    <meta property=\"og:url\" content=\"https://refringe.mandelics.com\" />\n    <meta property=\"og:type\" content=\"website\" />\n    <meta property=\"og:image\" content=\"https://refringe.mandelics.com/img/refringe-ogp2.jpg\" />\n    <meta property=\"og:image:alt\" content=\"ReFringe Flyer\" />\n'
     ),
     (
         '/',

@@ -167,7 +167,7 @@ export default defineComponent({
         // Lifecycle
         onMounted(async () => {
             document.addEventListener('keydown', handleKeydown);
-            await loadNotes(contextType.value, props.proposalId, props.showId);
+            await loadNotes(contextType.value, props);
         });
         
         onUnmounted(() => {
@@ -224,7 +224,8 @@ export default defineComponent({
                 style="
                     width: 400px;
                     max-width: 90vw;
-                    background: white;
+                    background: var(--bg, white);
+                    color: var(--fg, black);
                     box-shadow: -2px 0 10px rgba(0,0,0,0.3);
                     display: flex;
                     flex-direction: column;
@@ -235,21 +236,27 @@ export default defineComponent({
                 <div style="
                     padding: 1rem;
                     border-bottom: 1px solid #eee;
-                    background: #f8f9fa;
+                    background: var(--menu-bg, #f8f9fa);;
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
                 ">
                     <h3 style="margin: 0; font-size: 1.1rem;">
                         Notes
-                        <span v-if="proposalid && showid" style="color: #666; font-size: 0.8rem;">
+                        <span v-if="proposalid && showid" style="color: var(--fg, #666); font-size: 0.8rem;">
                             (Show & Proposal)
                         </span>
-                        <span v-else-if="showid" style="color: #666; font-size: 0.8rem;">
+                        <span v-else-if="showid" style="color: var(--fg, #666); font-size: 0.8rem;">
                             (Show)
                         </span>
-                        <span v-else-if="proposalid" style="color: #666; font-size: 0.8rem;">
+                        <span v-else-if="proposalid" style="color: var(--fg, #666); font-size: 0.8rem;">
                             (Proposal)
+                        </span>
+                        <span v-else-if="userid" style="color: var(--fg, #666); font-size: 0.8rem;">
+                            (User)
+                        </span>
+                        <span v-else-if="proposalid" style="color: var(--fg, #666); font-size: 0.8rem;">
+                            (Venue)
                         </span>
                     </h3>
                     <button 
@@ -259,7 +266,7 @@ export default defineComponent({
                             border: none;
                             font-size: 1.2rem;
                             cursor: pointer;
-                            color: #666;
+                            color: var(--fg, #666);
                             padding: 0.25rem;
                         "
                     >
@@ -280,7 +287,7 @@ export default defineComponent({
                             padding: '0.75rem',
                             border: 'none',
                             background: !showHidden ? '#007cba' : 'transparent',
-                            color: !showHidden ? 'white' : '#666',
+                            color: !showHidden ? 'var(--bg, white)' : 'var(--fg, #666)',
                             cursor: 'pointer',
                             fontSize: '0.9rem'
                         }"
@@ -294,7 +301,7 @@ export default defineComponent({
                             padding: '0.75rem', 
                             border: 'none',
                             background: showHidden ? '#007cba' : 'transparent',
-                            color: showHidden ? 'white' : '#666',
+                            color: showHidden ? 'var(--bg, white)' : 'var(--fg, #666)',
                             cursor: 'pointer',
                             fontSize: '0.9rem'
                         }"
@@ -314,7 +321,7 @@ export default defineComponent({
                         max-height: 400px;
                     "
                 >
-                    <div v-if="loading" style="text-align: center; padding: 2rem; color: #666;">
+                    <div v-if="loading" style="text-align: center; padding: 2rem; color: var(--fg, #666);">
                         Loading notes...
                     </div>
                     
@@ -322,18 +329,18 @@ export default defineComponent({
                         Error: {{ error }}
                     </div>
                     
-                    <div v-else-if="filteredNotes.length === 0" style="text-align: center; padding: 2rem; color: #666;">
+                    <div v-else-if="filteredNotes.length === 0" style="text-align: center; padding: 2rem; color: var(--fg, #666);">
                         No {{ showHidden ? 'hidden' : 'active' }} notes
                     </div>
 
                     <div v-else>
                         <div
                             v-for="note in filteredNotes"
-                            :key="note.ID"
+                            :key="note.id"
                             style="
                                 margin-bottom: 1rem;
                                 padding: 0.75rem;
-                                background: #f8f9fa;
+                                background: var(--bg, #f8f9fa);
                                 border-radius: 8px;
                                 border-left: 3px solid #007cba;
                             "
@@ -345,11 +352,11 @@ export default defineComponent({
                                 align-items: center;
                                 margin-bottom: 0.5rem;
                                 font-size: 0.8rem;
-                                color: #666;
+                                color: var(--fg, #666);
                             ">
                                 <span>
                                     {{ note.first_name }} {{ note.last_name }}
-                                    • {{ formatTimestamp(note.created_date_time) }}
+                                    • {{ formatTimestamp(note.created) }}
                                 </span>
                                 <div style="display: flex; gap: 0.25rem;">
                                     <span 
@@ -380,10 +387,10 @@ export default defineComponent({
                             ">
                             <!--
                                 <button 
-                                    @click="toggleFlag(note.ID, 'is_visible_to_organizers')"
+                                    @click="toggleFlag(note.id, 'is_visible_to_organizers')"
                                     :style="{
                                         background: note.is_visible_to_organizers ? '#007cba' : '#ccc',
-                                        color: note.is_visible_to_organizers ? 'white' : '#666',
+                                        color: note.is_visible_to_organizers ? 'var(--bg, white)' : 'var(--fg, #666)',
                                         border: 'none',
                                         padding: '0.25rem 0.5rem',
                                         borderRadius: '4px',
@@ -396,10 +403,10 @@ export default defineComponent({
                                 </button>
                             -->
                                 <button 
-                                    @click="toggleFlag(note.ID, 'is_visible_to_proposers')"
+                                    @click="toggleFlag(note.id, 'is_visible_to_proposers')"
                                     :style="{
                                         background: note.is_visible_to_proposers ? '#007cba' : '#ccc',
-                                        color: note.is_visible_to_proposers ? 'white' : '#666',
+                                        color: note.is_visible_to_proposers ? 'var(--bg, white)' : 'var(--fg, #666)',
                                         border: 'none',
                                         padding: '0.25rem 0.5rem',
                                         borderRadius: '4px',
@@ -411,10 +418,10 @@ export default defineComponent({
                                     👤
                                 </button>
                                 <button 
-                                    @click="toggleFlag(note.ID, 'is_visible_to_public')"
+                                    @click="toggleFlag(note.id, 'is_visible_to_public')"
                                     :style="{
                                         background: note.is_visible_to_public ? '#007cba' : '#ccc',
-                                        color: note.is_visible_to_public ? 'white' : '#666',
+                                        color: note.is_visible_to_public ? 'var(--bg, white)' : 'var(--fg, #666)',
                                         border: 'none',
                                         padding: '0.25rem 0.5rem',
                                         borderRadius: '4px',
@@ -426,10 +433,10 @@ export default defineComponent({
                                     🌍
                                 </button>
                                 <button 
-                                    @click="toggleFlag(note.ID, 'is_hidden')"
+                                    @click="toggleFlag(note.id, 'is_hidden')"
                                     :style="{
                                         background: note.is_hidden ? '#ffa726' : '#ccc',
-                                        color: note.is_hidden ? 'white' : '#666',
+                                        color: note.is_hidden ? 'var(--bg, white)' : 'var(--fg, #666)',
                                         border: 'none',
                                         padding: '0.25rem 0.5rem',
                                         borderRadius: '4px',
@@ -442,10 +449,10 @@ export default defineComponent({
                                 </button>
                                 <button
                                     v-if="note.is_hidden"
-                                    @click="removeNote(note.ID)"
+                                    @click="removeNote(note.id)"
                                     style="
                                         background: #d32f2f;
-                                        color: white;
+                                        color: var(--bg, white);
                                         border: none;
                                         padding: 0.25rem 0.5rem;
                                         border-radius: 4px;
@@ -468,7 +475,7 @@ export default defineComponent({
                     style="
                         padding: 1rem;
                         border-top: 1px solid #eee;
-                        background: #f8f9fa;
+                        background: var(--bg, #f8f9fa);
                     "
                 >
                     <textarea
@@ -494,15 +501,15 @@ export default defineComponent({
                         justify-content: space-between;
                         align-items: center;
                     ">
-                        <small style="color: #666;">
+                        <small style="color: var(--fg, #666);">
                             Enter to send • Shift+Enter for new line
                         </small>
                         <button
                             @click="submitNote"
                             :disabled="!newNoteText.trim()"
                             style="
-                                background: #007cba;
-                                color: white;
+                                background: var(--fg, #007cba);
+                                color: var(--bg, white);
                                 border: none;
                                 padding: 0.5rem 1rem;
                                 border-radius: 4px;

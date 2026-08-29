@@ -64,7 +64,7 @@ router.get('/', async (req, res) => {
         ...req.query
     });
     for (const proposal of proposals) proposal.updated = proposal.updated.toISOString().slice(0, 19);
-    if (req.headers.accept?.includes('application/json')) res.json({ proposals });
+    if (req.headers.accept?.includes('application/json')) return res.json({ proposals });
     return renderTemplate({ template: 'proposals', proposals })(req, res);
 });
 

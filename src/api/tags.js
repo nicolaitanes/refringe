@@ -11,7 +11,7 @@ export const tagsDB = {
         if ('level' in q) {
             if (q.level > 10) query.append(SQL` and t.is_visible_to_public`)
         }
-        query.append(`order by active desc, name`);
+        query.append(` order by active desc, name`);
         const result = await pgdb.query(query);
         return result.rows;
     },
@@ -20,16 +20,31 @@ export const tagsDB = {
         return result.rows[0];
     },
     async add(q) {
-        return await pgdb.add('tags', q, SQL`insert into tags (name, emoji, description, is_visible_to_public) values (${q.name || ''}, ${q.emoji || ''}, ${q.description || ''}, ${!!q.is_visible_to_public}) returning *`);
+        return await pgdb.add('tags', q, SQL`insert into tags (name, emoji, description, is_visible_to_public, created_by_userid) values (${q.name || ''}, ${q.emoji || ''}, ${q.description || ''}, ${!!q.is_visible_to_public}, ${q.created_by_userid}) returning *`);
     },
     async update(id, q) {
-        const query = SQL`update tags set active=${!!q.active}, name=${q.name || ''}, emoji=${q.emoji || ''}, description=${q.description || ''}, is_visible_to_public=${!!q.is_visible_to_public} returning *`;
-        return await pgdb.update(id, q, query);
+        const parts = [];
+        if ('active' in q) parts.push(SQL`active=${!!q.active}`);
+        if ('name' in q) parts.push(SQL`name=${q.name || ''}`);
+        if ('emoji' in q) parts.push(SQL`emoji=${q.emoji || ''}`);
+        if ('description' in q) parts.push(SQL`description=${q.description || ''}`);
+        if ('is_visible_to_public' in q) parts.push(SQL`is_visible_to_public=${!!q.is_visible_to_public}`);
+        if (!parts.length) return null;
+        const [first, ...rest] = parts;
+        const query = SQL`update tags set `;
+        query.append(first);
+        for (const part of rest) {
+            query.append(', ');
+            query.append(part);
+        }
+        query.append(` returning *`);
+        console.log(query, parts);
+        return await pgdb.update('tags', id, q, query);
     },
     async listLinked(contextType, recordid, q) {
         const query = SQL`select t.*, `;
-        query.append(`l.${contextType}id from tags t join tags_${contextType}s l on t.id = l.tagid `);
-        query.append(SQL`where l.${contextType}id = ${recordid}`);
+        query.append(`l.${contextType}id from tags t join tags_${contextType}s l on t.id = l.tagid where l.${contextType}id = `);
+        query.append(SQL`${recordid}`);
         if ('active' in q) query.append(SQL` and t.active = ${![false, 'false'].includes(q.active)}`);
         if ('level' in q) {
             if (q.level > 10) query.append(SQL` and t.is_visible_to_public`)
@@ -58,13 +73,13 @@ router.use(express.json());
 router.get('/', async (req, res) => {
     const q = { ...req.query, level: req.auth.l };
     const tags = await tagsDB.list(q);
-    if (req.headers.accept?.includes('application/json')) res.json({ tags });
-    return renderTemplate({ template: 'tags', tags })(req, res);
+    if (req.headers.accept?.includes('application/json')) return res.json({ tags });
+    return renderTemplate({ template: 'tags', tags: JSON.stringify(tags).replace(/\\/g, '\\\\') })(req, res);
 });
 
 router.post('/', async (req, res) => {
     try {
-        const tag = await tagsDB.add({req.body, created_by_userid: req.auth.u });
+        const tag = await tagsDB.add({ ...req.body, created_by_userid: req.auth.u });
         return res.json(tag);
     } catch (err) {
         console.log(err);
@@ -114,4 +129,3 @@ router.delete('/:id/:contextType/:recordid', async(req, res) => {
         return res.status(500).send('Unknown Error');
     }
 });
-

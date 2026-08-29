@@ -1,6 +1,7 @@
 import { promises as fsp } from 'fs';
 import path from 'path';
 import Handlebars from 'handlebars';
+import { getPage } from './pages.js';
 
 Handlebars.registerHelper('ifEquals', function(arg1, arg2, options) {
     return (arg1 == arg2) ? options.fn(this) : options.inverse(this);
@@ -18,14 +19,16 @@ export const initTemplates = async (templatePath) => {
     }
 };
 
-export const renderTemplate = context => (req, res) => {
+export const renderTemplate = context => async (req, res) => {
     let template = templates[context?.template || req.params.template || 'index'];
     if (!template) return res.redirect(303, '/');
+    const sitename = await getPage('(site-name)');
     const status = template ? 200 : 404;
     template ??= templates['404'];
     const fullContext = {
         isAdmin: req.auth && req.auth.l === 0,
         isOrg: req.auth && req.auth.l <= 10,
+        sitename,
         ...(context ?? {}),
         path: req.params.template,
         auth: req.auth

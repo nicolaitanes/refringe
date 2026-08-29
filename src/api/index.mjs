@@ -8,9 +8,10 @@ import yargs from 'yargs';
 import { initAuth } from './auth.js';
 import { router as notes } from './notes.js';
 import { pgdb } from './pgdb.js';
-import { getPage, router as pages, renderPage } from './pages.js';
+import { router as pages, renderPage } from './pages.js';
 import { router as proposals, proposalsDB } from './proposals.js';
 import { router as questions } from './questions.js';
+import { router as tags } from './tags.js';
 import { initTemplates, renderTemplate } from './templates.js';
 import { usersDB } from './users.js';
 import { router as venues, venuesDB } from './venues.js';
@@ -47,6 +48,7 @@ app.use('/notes', notes);
 app.use('/pages', pages);
 app.use('/proposals', proposals);
 app.use('/questions', questions);
+app.use('/tags', tags);
 app.use('/venues', venues);
 
 app.use(express.json());
@@ -57,10 +59,7 @@ app.get('/testdb', async (req, res) => {
     res.send(Buffer.from(JSON.stringify(result.rows[0], null, 2)));
 });
 
-app.get('/:template', async (req, res) => {
-    const siteName = await getPage('(site-name)');
-    return renderTemplate({ siteName })(req, res);
-});
+app.get('/:template', renderTemplate());
 
 app.get('/', renderTemplate());
 

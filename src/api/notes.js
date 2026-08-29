@@ -5,26 +5,19 @@ import { renderTemplate } from './templates.js';
 
 export const notesDB = {
     async list(q) {
-        const query = SQL`select * from notes n`;
-        const hasid = 'proposalid' in q || 'showid' in q || 'userid' in q || 'venueid' in q;
-        if (!hasid || 'proposalid' in q) {
-            query.append(SQL` left join notes_proposals np on np.noteid = n.id`);
-        }
-        if (!hasid || 'noteid' in q) {
-            query.append(SQL` left join notes_shows np on np.noteid = n.id`);
-        }
-        if (!hasid || 'userid' in q) {
-            query.append(SQL` left join notes_users np on np.noteid = n.id`);
-        }
-        if (!hasid || 'venueid' in q) {
-            query.append(SQL` left join notes_venues np on np.noteid = n.id`);
-        }
-        query.append(` where 1=1`);
+        const query = SQL`select n.*, proposalid, showid, userid, venueid, u.fullname, uuid_extract_timestamp(n.id) as created
+                          from notes n join users u on n.created_by_userid = u.id
+                          left join notes_proposals np on np.noteid = n.id
+                          left join notes_shows ns on ns.noteid = n.id
+                          left join notes_users nu on nu.noteid = n.id
+                          left join notes_venues nv on nv.noteid = n.id
+                          where 1=1`;
         if ('level' in q) {
             if (q.level > 20) query.append(SQL` and n.is_visible_to_public`)
             else if (q.level > 10) query.append(SQL` and n.is_visible_to_proposers`)
             else query.append(SQL` and n.is_visible_to_organizers`);
         }
+        query.append(SQL` order by n.id desc`);
         const result = await pgdb.query(query);
         return result.rows;
     },
@@ -33,7 +26,7 @@ export const notesDB = {
         return result.rows[0];
     },
     async add(q) {
-        const note = await pgdb.add('notes', q, SQL`insert into notes (content, is_visible_to_organizers, is_visible_to_proposers, is_visible_to_public) values (${q.content || ''}, ${!!q.is_visible_to_organizers}, ${!!q.is_visible_to_proposers}, ${!!q.is_visible_to_public}) returning *`);
+        const note = await pgdb.add('notes', q, SQL`insert into notes (content, is_visible_to_organizers, is_visible_to_proposers, is_visible_to_public, created_by_userid) values (${q.content || ''}, ${!!q.is_visible_to_organizers}, ${!!q.is_visible_to_proposers}, ${!!q.is_visible_to_public}, ${q.created_by_userid}) returning *`);
         if (q.proposalid) {
             const link = { noteid: note.id, proposalid: q.proposalid };
             await pgdb.add('notes_proposals', link, SQL`insert into notes_proposals (noteid, proposalid) values (${link.noteid}, ${q.proposalid}) returning *`);
@@ -51,6 +44,7 @@ export const notesDB = {
             await pgdb.add('notes_venues', link, SQL`insert into notes_venues (noteid, venueid) values (${link.noteid}, ${q.venueid}) returning *`);
             note.venueid = q.venueid;
         }
+        return note;
     },
     async update(id, q) {
         const query = SQL`update notes set updated=now()`;
@@ -58,11 +52,16 @@ export const notesDB = {
         if ('is_visible_to_organizers' in q) query.append(SQL`, is_visible_to_organizers = ${!!q.is_visible_to_organizers}`);
         if ('is_visible_to_proposers' in q) query.append(SQL`, is_visible_to_proposers = ${!!q.is_visible_to_proposers}`);
         if ('is_visible_to_public' in q) query.append(SQL`, is_visible_to_public = ${!!q.is_visible_to_public}`);
-        query.append(` where id=${id} returning *`);
-        return await pgdb.update(id, q, query);
+        if ('is_hidden' in q) query.append(SQL`, is_hidden = ${!!q.is_hidden}`);
+        query.append(SQL` where id=${id} returning *`);
+        return await pgdb.update('notes', id, q, query);
     },
     async delete(id) {
-        await pgdb.delete('notes', id, `delete from notes where id=${id}`);
+        await pgdb.delete('notes_proposals', [id], SQL`delete from notes_proposals where noteid = ${id}`, { noteid: id });
+        await pgdb.delete('notes_shows', [id], SQL`delete from notes_shows where noteid = ${id}`, { noteid: id });
+        await pgdb.delete('notes_users', [id], SQL`delete from notes_users where noteid = ${id}`, { noteid: id });
+        await pgdb.delete('notes_venues', [id], SQL`delete from notes_venues where noteid = ${id}`, { noteid: id });
+        await pgdb.delete('notes', id);
     }
 };
 
@@ -77,7 +76,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
     try {
-        const note = await notesDB.add({req.body, created_by_userid: req.auth.u });
+        const note = await notesDB.add({ ...req.body, created_by_userid: req.auth.u });
         return res.json(note);
     } catch (err) {
         console.log(err);

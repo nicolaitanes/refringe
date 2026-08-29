@@ -80,7 +80,7 @@ router.get('/', async (req, res) => {
         active: true,
         ...req.query
     });
-    if (req.headers.accept?.includes('application/json')) res.json({ venues });
+    if (req.headers.accept?.includes('application/json')) return res.json({ venues });
     return renderTemplate({ template: 'venues', venues })(req, res);
 });
 

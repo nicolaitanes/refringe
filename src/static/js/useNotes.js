@@ -36,16 +36,21 @@ export function useNotes() {
     async function makeApiCall(endpoint, data, method='POST') {
         const response = await fetch('/notes'+endpoint, {
             method,
-            headers: method !== 'GET' ? {
-                'Content-Type': 'application/json'
-            } : {},
-            body: method !== GET && data ? JSON.stringify(data) : undefined
-            params: method === GET ? data ?? {} : {}
+            headers: {
+                Accept: 'application/json',
+                ...(method !== 'GET' ? {
+                    'Content-Type': 'application/json'
+                } : {})
+            },
+            body: method !== 'GET' && data ? JSON.stringify(data) : undefined,
+            params: method === 'GET' ? data ?? {} : {}
         });
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
+
+        if (response.status === 204) return;
 
         return await response.json();
     }
@@ -66,7 +71,7 @@ export function useNotes() {
             if (!allNotes.value.length) {
                 // Load all
                 allNotes.value = [{ content: ''}];
-                const allNotesResult = await makeApiCall('/', null, GET);
+                const allNotesResult = await makeApiCall('/', null, 'GET');
                 allNotes.value = Array.isArray(allNotesResult?.notes) ? allNotesResult?.notes : [];
             }
 
@@ -136,7 +141,7 @@ export function useNotes() {
         error.value = null;
 
         try {
-            const result = await makeApiCall('/'+noteId, noteData);
+            const result = await makeApiCall('/'+noteId, noteData, 'PUT');
 
             // Update local notes array
             for (const someNotes of [allNotes, notes]) {

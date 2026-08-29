@@ -1,9 +1,9 @@
 // NotesButton.js - Vue component for Notes button
-import { defineComponent, ref, computed, onMounted } from 'vue';
-import NotesOverlay from 'NotesOverlay';
+import { ref, computed, onMounted } from 'vue';
+import NotesOverlay from 'notesOverlay';
 import { useNotes } from 'useNotes';
 
-export default defineComponent({
+export default {
     name: 'NotesButton',
     components: {
         NotesOverlay
@@ -136,4 +136,4 @@ export default defineComponent({
             />
         </div>
     `
-});
+};

@@ -1,7 +1,7 @@
 {{> header title="All Proposals" sitename=sitename opengraph=opengraph }}
 {{> breadcrumb title="All Proposals" }}
 
-<div class="ma1">
+<div class="ma1 proposal-mgt">
     <h3>All Proposals</h3>
     
     <table class="table">
@@ -10,18 +10,38 @@
             <th>Title</th>
             <th>Author</th>
             <th>Status</th>
+            <th>Notes</th>
+            <th>Tags</th>
             <th>Updated</th>
         </tr>
         </thead>
         <tbody>
-        {{#each proposals}}
+        {{#each proposals as |prop|}}
         <tr>
-            <td><a href="/proposals/{{id}}">{{title}}</a></td>
-            <td>{{fullname}}</td>
-            <td>{{status}}</td>
-            <td>{{updated}}</td>
+            <td><a href="/proposals/{{prop.id}}">{{prop.title}}</a></td>
+            <td>{{prop.fullname}}</td>
+            <td>{{prop.status}}</td>
+            <td><notes-button level="{{auth.l}}" proposalid="{{prop.id}}"></notes-button></td>
+            <td><tag-chip entity-type="proposal" :entityid="'{{prop.id}}'" class-name="proposal-tags"></tag-chip></td>
+            <td>{{prop.updated}}</td>
         </tr>
         {{/each}}
         </tbody>
     </table>
 </div>
+
+<script type="module">
+    import { createApp } from 'vue';
+    import NotesButton from 'notesButton';
+    import TagChip from 'tagChip';
+
+    const TestApp = {
+        components: {
+            NotesButton,
+            TagChip
+        },
+        delimiters: ['[[', ']]'],
+    }
+    createApp(TestApp).mount('div.proposal-mgt');
+</script>
+

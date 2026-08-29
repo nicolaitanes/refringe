@@ -37,16 +37,21 @@ export function useTags() {
     async function makeApiCall(endpoint, data, method='POST') {
         const response = await fetch('/tags'+endpoint, {
             method,
-            headers: method !== 'GET' ? {
-                'Content-Type': 'application/json'
-            } : {},
-            body: method !== GET && data ? JSON.stringify(data) : undefined
-            params: method === GET ? data ?? {} : {}
+            headers: {
+                Accept: 'application/json',
+                ...(method !== 'GET' ? {
+                    'Content-Type': 'application/json'
+                } : {})
+            },
+            body: method !== 'GET' && data ? JSON.stringify(data) : undefined,
+            params: method === 'GET' ? data ?? {} : {}
         });
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
+
+        if (response.status === 204) return;
 
         return await response.json();
     }
@@ -106,17 +111,12 @@ export function useTags() {
 
         try {
             const result = await makeApiCall('/' + tagid, tagData, 'PUT');
-
-            if (result.success) {
-                // Update local tags array
-                const index = tags.value.findIndex(t => t.id == tagid);
-                if (index !== -1) {
-                    Object.assign(tags.value[index], tagData);
-                }
-                return true;
+            // Update local tags array
+            const index = tags.value.findIndex(t => t.id == tagid);
+            if (index !== -1) {
+                Object.assign(tags.value[index], tagData);
             }
-            
-            throw new Error('Failed to update tag');
+            return true;
         } catch (err) {
             error.value = err.message;
             console.error('Error updating tag:', err);
@@ -129,8 +129,8 @@ export function useTags() {
     // Link tag to proposal
     async function linkTagToProposal(tagid, proposalid) {
         try {
-            const result = await makeApiCall(`${tagid}/proposal/${proposalid}`, null, 'PUT');
-            return result.success;
+            const result = await makeApiCall(`/${tagid}/proposal/${proposalid}`, null, 'PUT');
+            return true;
         } catch (err) {
             console.error('Error linking tag to proposal:', err);
             throw err;
@@ -140,8 +140,8 @@ export function useTags() {
     // Link tag to show
     async function linkTagToShow(tagid, showid) {
         try {
-            const result = await makeApiCall(`${tagid}/show/${showid}`, null, 'PUT');
-            return result.success;
+            const result = await makeApiCall(`/${tagid}/show/${showid}`, null, 'PUT');
+            return true;
         } catch (err) {
             console.error('Error linking tag to show:', err);
             throw err;
@@ -151,8 +151,8 @@ export function useTags() {
     // Link tag to user
     async function linkTagToUser(tagid, userid) {
         try {
-            const result = await makeApiCall(`${tagid}/user/${userid}`, null, 'PUT');
-            return result.success;
+            const result = await makeApiCall(`/${tagid}/user/${userid}`, null, 'PUT');
+            return true;
         } catch (err) {
             console.error('Error linking tag to user:', err);
             throw err;
@@ -162,8 +162,8 @@ export function useTags() {
     // Link tag to venue
     async function linkTagToVenue(tagid, venueid) {
         try {
-            const result = await makeApiCall(`${tagid}/venue/${venueid}`, null, 'PUT');
-            return result.success;
+            const result = await makeApiCall(`/${tagid}/venue/${venueid}`, null, 'PUT');
+            return true;
         } catch (err) {
             console.error('Error linking tag to venue:', err);
             throw err;
@@ -173,8 +173,8 @@ export function useTags() {
     // Unlink tag from proposal
     async function unlinkTagFromProposal(tagid, proposalid) {
         try {
-            const result = await makeApiCall(`${tagid}/proposal/${venueid}`, null, 'DELETE');
-            return result.success;
+            const result = await makeApiCall(`/${tagid}/proposal/${proposalid}`, null, 'DELETE');
+            return true;
         } catch (err) {
             console.error('Error unlinking tag from proposal:', err);
             throw err;
@@ -184,8 +184,8 @@ export function useTags() {
     // Unlink tag from show
     async function unlinkTagFromShow(tagid, showid) {
         try {
-            const result = await makeApiCall(`${tagid}/venue/${showid}`, null, 'DELETE');
-            return result.success;
+            const result = await makeApiCall(`/${tagid}/venue/${showid}`, null, 'DELETE');
+            return true;
         } catch (err) {
             console.error('Error unlinking tag from show:', err);
             throw err;
@@ -195,8 +195,8 @@ export function useTags() {
     // Unlink tag from user
     async function unlinkTagFromUser(tagid, userid) {
         try {
-            const result = await makeApiCall(`${tagid}/venue/${userid}`, null, 'DELETE');
-            return result.success;
+            const result = await makeApiCall(`/${tagid}/venue/${userid}`, null, 'DELETE');
+            return true;
         } catch (err) {
             console.error('Error unlinking tag from user:', err);
             throw err;
@@ -206,8 +206,8 @@ export function useTags() {
     // Unlink tag from venue
     async function unlinkTagFromVenue(tagid, venueid) {
         try {
-            const result = await makeApiCall(`${tagid}/venue/${venueid}`, null, 'DELETE');
-            return result.success;
+            const result = await makeApiCall(`/${tagid}/venue/${venueid}`, null, 'DELETE');
+            return true;
         } catch (err) {
             console.error('Error unlinking tag from venue:', err);
             throw err;
@@ -269,7 +269,7 @@ export function useTags() {
     // Search tags (for autocomplete)
     async function searchTags(searchTerm, limit = 10) {
         const searchUpper = searchTerm.trim().toUpperCase();
-        return tags.filter(t => t.name.toUpperCase().includes(searchUpper) || t.emoji.includes(searchTerm));
+        return tags.value.filter(t => t.name.toUpperCase().includes(searchUpper) || t.emoji?.includes(searchTerm));
     }
 
     // Set tag filter for calendar/schedule
@@ -324,10 +324,10 @@ export function useTags() {
         unlinkTagFromShow,
         unlinkTagFromUser,
         unlinkTagFromVenue,
-        getTagsForProposals,
-        getTagsForShows,
-        getTagsForUsers,
-        getTagsForVenues,
+        getTagsForProposal,
+        getTagsForShow,
+        getTagsForUser,
+        getTagsForVenue,
         searchTags,
         setTagFilter,
         clearTagFilter,

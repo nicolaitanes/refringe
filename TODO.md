@@ -3,18 +3,32 @@
 ## Definitely
 
 - [ ] tags
-    - [ ] db
-    - [ ] api
+    - [x] db
+    - [x] api
+    - [x] tag components
     - [ ] tag editing
-    - [ ] tag components
+    - [ ] tags on proposals, users, venues
 - [ ] notes
-    - [ ] db
-    - [ ] api
-    - [ ] note components
+    - [x] db
+    - [x] api
+    - [x] note components
+    - [ ] org. notes on proposals, users, venues
 - [ ] calendars
     - [ ] db
+        - [x] ported
+        - [ ] deadline
+        - [ ] call_for_work
+        - [ ] calling_public
+        - [ ] calling_proposers
+        - [ ] calendars_proposals with status (no proposal status)
+        - [ ] calendars_venues with status
+        - [ ] {calendar, venue}.for_future_calendars
     - [ ] api
     - [ ] components
+        - [ ] port calendar editing
+        - [ ] {proposal, venue} check all events that apply
+            - notpast+calling, already linked, for_future_calendars
+        - [ ] iframeable monthly fullcalendar, in seeded / and /cur-events/
 - [ ] schedule output
 - [ ] schedule preview/admin tools
 - [ ] schedule addons
@@ -31,6 +45,7 @@
 
 - [x] toggle cleartext password
 - [x] prevent double-submit
+- [ ] better breadcrumbs
 - [ ] question editor
      - [ ] layout
      - [ ] saving / disabled

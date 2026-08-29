@@ -47,7 +47,7 @@ pgdb.delete = async (tbl, id, q, context) => {
         context = await pgdb.query(query);
     }
     await pgdb.logEvent('D', context ?? { id }, tbl);
-    await pgdb.query(q);
+    if (q) await pgdb.query(q);
 };
 
 for (const tbl of ['migrations', 'seeds']) {
