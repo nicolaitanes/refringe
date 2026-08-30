@@ -85,6 +85,7 @@ export const calendarsDB = {
     async updateShow(id, q) {
         const query = SQL`update shows set updated=now()`;
         if ('active' in q) query.append(SQL` active=${!!q.active}`);
+        if ('iscancelled' in q) query.append(SQL` iscancelled=${!!q.iscancelled}`);
         if ('isinstallation' in q) query.append(SQL` isinstallation=${!!q.isinstallation}`);
         if ('isgroup' in q) query.append(SQL` isgroup=${!!q.isgroup}`);
         if ('groupshowid' in q) query.append(SQL` groupshowid=${q.groupshowid}`);

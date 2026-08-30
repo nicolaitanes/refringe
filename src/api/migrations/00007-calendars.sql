@@ -45,6 +45,7 @@ create table shows (
     proposalid uuid not null references proposals(id),
     isinstallation bool not null default false,
     isgroup bool not null default false,
+    iscancelled bool not null default false,
     groupshowid uuid references shows(id),
     venueid uuid references venues(id),
     dateonly date,
