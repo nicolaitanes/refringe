@@ -12,6 +12,9 @@
             <th>Notes</th>
             <th>Tags</th>
             <th>Updated</th>
+            {{#each venues.[0].questions}}
+            <th>{{ question }}</th>
+            {{/each}}
         </tr>
         </thead>
         <tbody>
@@ -22,6 +25,9 @@
             <td><notes-button level="{{auth.l}}" proposalid="{{prop.id}}"></notes-button></td>
             <td><tag-chip entity-type="proposal" :entityid="'{{prop.id}}'" class-name="proposal-tags"></tag-chip></td>
             <td>{{prop.updated}}</td>
+            {{#each prop.questions}}
+            <td>{{answer}}</td>
+            {{/each}}
         </tr>
         {{/each}}
         </tbody>

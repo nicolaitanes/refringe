@@ -13,6 +13,7 @@ export const calendarsDB = {
         if ('current' in q) query.append(SQL` and (c.enddate is null or c.enddate > now())`);
         if ('ispublic' in q) query.append(SQL` and p.ispublic and c.active`);
         query.append(SQL` order by c.startdate, p.priority, c.name`);
+        if ('limit' in q) query.append(SQL` limit ${q.limit}`);
         const result = await pgdb.query(query);
         return result.rows;
     },
@@ -127,14 +128,26 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
-    if (!req.auth || req.auth.l > 10) return res.status(403).send('Forbidden');
     const calendar = await calendarsDB.get(req.params.id);
     if (!calendar) return res.status(404).send('Not Found');
+    let status = !calendar.active ? 'inactive'
+          : calendar.ispublic ? 'public'
+          : calendar.calling_public ? 'publiccall'
+          : calendar.calling_users ? 'usercall'
+          : 'draft';
+    if (calendar.deadline && status.endsWith('call') && calendar.deadline < new Date()) {
+        status = 'draft';
+    }
+    if (!req.auth || req.auth.l > 20) {
+        if (!status.startsWith('public')) return res.status(403).send('Forbidden');
+    } else if (req.auth.l > 10) {
+        if (status !== 'public' && status !== 'usercall') return res.status(403).send('Forbidden');
+    }
     if (req.headers.accept?.includes('application/json')) return res.json(calendar);
     return renderTemplate({
-        template: 'calendar-edit',
+        template: req.auth && req.auth.l <= 10 ? 'calendar-edit' : 'calendar-detail',
         calendar,
-        calendarJSON: JSON.stringify(publicCalendars).replace(/\\/g, '\\\\')
+        calendarJSON: JSON.stringify(calendar).replace(/\\/g, '\\\\')
     })(req, res);
 });
 
@@ -261,3 +274,18 @@ router.get('/public/:key', async (req, res) => {
     if (calendar) return res.json(calendar);
     return res.status(404).send('Not Found');
 });
+
+const getSchedule = async (req, res) => {
+    const calendar = req.params.key
+          ? await calendarsDB.getPublic(req.params.key)
+          : (await calendarsDB.list({ active: true, current: true, ispublic: true, limit: 1 }))[0];
+    if (!calendar) return res.status(404).send('Not Found');
+    return renderTemplate({
+        template: 'schedule',
+        calendar: JSON.stringify(calendar).replace(/\\/g, '\\\\'),
+        // TODO more data, prerendering
+    })(req, res);
+};
+
+router.get('/schedule/', getSchedule);
+router.get('/schedule/:key', getSchedule);

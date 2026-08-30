@@ -66,7 +66,9 @@ router.get('/', async (req, res) => {
     });
     for (const proposal of proposals) proposal.updated = proposal.updated.toISOString().slice(0, 19);
     if (req.headers.accept?.includes('application/json')) return res.json({ proposals });
-    // TODO enrich with answers
+    await Promise.all(proposals.map(async p => {
+        p.questions = await questionsDB.listAnswers({ proposalid: p.id });
+    });
     return renderTemplate({ template: 'proposals', proposals })(req, res);
 });
 

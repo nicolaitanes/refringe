@@ -8,6 +8,7 @@ import { promises as fsp } from 'fs';
 import path from 'path';
 import pg from 'pg';
 import SQL from 'sql-template-strings'
+import sqlite3 from 'sqlite3';
 
 export const pgdb = new pg.Pool({
     host: 'refringe-pg',
@@ -16,9 +17,25 @@ export const pgdb = new pg.Pool({
     password: process.env.POSTGRES_PASSWORD
 });
 
-pgdb.logEvent = async (op, context, tbl=null) => {
-    // TODO persist for rehydration
-    console.log(`${op} ${tbl}\n${JSON.stringify(context, null, 2)}\n`);
+const logDB = open({
+    filename: path.join('/app-logs', 'refringe-logs.sqlite'),
+    driver: sqlite3.Database,
+});
+
+logDB.then(logdb => logdb.run(`
+  create table if not exists events (
+    id integer primary key,
+    op text,
+    tblid text,
+    tbl text,
+    context jsonb
+  )
+`));
+
+pgdb.logEvent = async (op, context, tbl=null, id=null) => {
+    const jsonContext = JSON,.stringify(context, null, 2);
+    console.log(`${op} ${tbl}\n${jsonContext}\n`);
+    (await logDB).run(SQL`insert into events (op, tblid, tbl, context) values (${op}, ${id}, ${tbl}, ${jsonCotext})`);
 };
 
 pgdb.add = async (tbl, context, q) => {

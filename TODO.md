@@ -1,37 +1,33 @@
 # TODO
 
-## Definitely
+## Features
 
-- [ ] tags in proposal edit
-- [ ] tags on users
-- [ ] tags on venues
-- [ ] notes on proposals, users, venues
-- [ ] calendar list editing and publishing
-- [ ] calendar scheduling
-- [ ] schedule output
+- [ ] calendar-edit (fullcalendar and shows)
+- [ ] calendar-detail (call for work etc)
+- [ ] schedule (by day/venue/...)
+- [ ] venue map
 - [ ] iframeable monthly fullcalendar, in seeded / and /cur-events/
     - include public callforwork deadlines
 - [ ] schedule preview/admin tools
-- [ ] cancelled shows
-    - [ ] by calendars_proposals.status
-    - [ ] by flag on show
 - [ ] email
     - [ ] new users
     - [ ] proposals to proposers
     - [ ] venues to creator
     - [ ] email a single proposer, e.g. draft schedule, when status changes, etc.
     - [ ] mass email to proposers on a calendar
-- [ ] full table of {proposal | venue} with q/a, tags, notes
-- [ ] capture venue lat/lng from gps
 
-## Good ideas
+## Improvements
 
+- [ ] clean up date/time formatting
+- [ ] cancelled shows
+    - [ ] by calendars_proposals.status
+    - [ ] by flag on show
+- [ ] capture venue lat/long on map
+- [ ] better breadcrumbs
 - [ ] sortable tables/lists
 - [ ] filterable tables/lists
 - [ ] csv export of proposals/users/venues with q/a, tags, notes
 - [ ] combine user2 into user1 (set user1.id on proposals/venues/... and deactivate user2)
-- [ ] capture venue lat/long on map
-- [ ] better breadcrumbs
 - [ ] content security policy
 - [ ] test and improve question editor
      - [ ] try various field types, choices

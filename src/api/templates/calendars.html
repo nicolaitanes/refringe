@@ -1,1 +1,159 @@
+{{> header title="Manage Events" sitename=sitename opengraph=opengraph }}
+{{> breadcrumb title="Manage Events" }}
 
+<div class="ma1 calendar-mgt">
+  <div>
+    <label><input type="checkbox" :checked="showInactive">Show Inactive</label>
+  </div>
+  
+  <template v-for="cal of calendars">
+    <div v-if="cal.editing">
+      <div class="formfields">
+        <label for="active">Active</label>
+        <input id="active" name="active" type="checkbox" :checked="cal.newActive">
+        <label for="name">Working Title:</label>
+        <input id="name" name="name" type="text" :value="cal.newName">
+        <label for="startdate">Start Date:</label>
+        <input id="startdate" name="startdate" type="date" :value="cal.newStartdate">
+        <label for="enddate">End Date:</label>
+        <input id="enddate" name="enddate" type="date" :value="cal.newEnddate">
+        <label><input id="ispublic" name="ispublic" type="checkbox" :checked="cal.newIspublic"> Published under key:</label>
+        <input id="key" name="key" type="text" :value="cal.newKey">
+        <label for="publicname">Public Title:</label>
+        <input id="publicname" name="publicname" type="text" :value="cal.newPublicname">
+        <label for="notes" class="twofields">Notes:</label>
+        <textarea id="notes" name="notes" :value="cal.newNotes"></textarea>
+        <label for="callforwork" class="twofields">Call For Work:</label>
+        <textarea id="callforwork" name="callforwork" :value="cal.newCallforwork"></textarea>
+        <label for="deadline">Deadline:</label>
+        <input id="deadline" name="deadline" type="date" :value="cal.newDeadline">
+        <label><input id="calling_users" name="calling_users" type="checkbox" :checked="cal.newCalling_users"> Calling members</label>
+        <label><input id="calling_public" name="calling_public" type="checkbox" :checked="cal.newCalling_public"> Calling the public</label>
+        <!-- TODO button to email members with call for work -->
+      </div>
+
+      <button :disabled="cal.issaving" @click="cancelEdit(cal)">Cancel</button>
+      <button :disabled="cal.issaving" @click="saveCalendar(cal)">Save</button>
+    </div>
+    <div v-else :class="{ 'calendar-summary': true, inactive: !cal.active }">
+      <h3>[[ cal.publicname || cal.name ]][[ !cal.publicname || cal.publicname === cal.name ? '' : '('+cal.name+')' ]]</h3>
+      <p>[[ cal.notes ]]</p>
+      <div v-if="cal.startdate || cal.enddate">
+        <i>[[ cal.startdate || '' ]] - [[cal.enddate || '' ]]</i>
+      </div>
+      <div v-if="cal.ispublic">
+        Published under key: <i>[[ cal.key ]]</i>
+      </div>
+      <div v-if="cal.callforwork">
+        <b>Call for work:</b>
+        <i v-if="cal.calling_users">(Members)</i>
+        <i v-if="cal.calling_public">(Public)</i>
+        <pre>[[ cal.callforwork ]]</pre>
+      </div>
+      <div v-if="cal.deadline">
+        <b>Deadline: [[ cal.deadline ]]</b>
+      </div>
+      <button @click="editCalendar(cal)">Edit</button>
+    </div>
+  </template>
+</div>
+
+<script type="module">
+    import { computed, createApp, ref } from 'vue';
+
+    const resetEdits = (cal) => Object.assign(cal, {
+        editing: false,
+        errorMessage: '',
+        newActive: cal.active,
+        newName: cal.name,
+        newNotes: cal.notes,
+        newStartdate: cal.startdate,
+        newEnddate: cal.endddate,
+        newDeadline: cal.deadline,
+        newCallforwork: cal.callforwork,
+        newCalling_public: cal.calling_public,
+        newCalling_users: cal.calling_users,
+        newPublicname: cal.publicname,
+        newKey: cal.key,
+        newIspublic: cal.ispublic,
+        newPriority: cal.priority
+    });
+
+    const fromEdits = (cal) => ({
+        editing: false,
+        active: cal.newActive,
+        name: cal.newName,
+        notes: cal.newNotes,
+        startdate: cal.newStartdate,
+        endddate: cal.newEnddate,
+        deadline: cal.newDeadline,
+        callforwork: cal.newCallforwork,
+        calling_public: cal.newCalling_public,
+        calling_users: cal.newCalling_users,
+        publicname: cal.newPublicname,
+        key: cal.newKey,
+        ispublic: cal.newIspublic,
+        priority: cal.newPriority
+    });
+
+    async function makeApiCall(path, params=null, method='GET') {
+        const fullpath = '/calendars' + path;
+        const headers = { Accept: 'application/json' };
+        const response = await (method === GET
+             ? fetch(fullpath, { method, headers, params })
+             : fetch(fullpath, { method, headers, body: JSON.stringify(params) })
+        );
+        if (response.status === 204) return;
+        if (response.status === 200) return await response.json();
+        const errBody = await response.text();
+        const err = new Error('Request Failed');
+        try {
+            err.details = JSON.parse(errBody);
+        } catch (e) {
+            err.details = errBody;
+        }
+        throw err;
+    }
+  
+    const TestApp = {
+        delimiters: ['[[', ']]'],
+        setup() {
+            const allCalendars = ref(JSON.parse(`{{{ calendars }}}`));
+            for (const cal of allCalendars) resetEdits(cal);
+            const showInactive = ref(false);
+            const calendars = computed(() => showInactive ? allCalendars : allCalendars.filter(c => c.active));
+  
+            return {
+                allCalendars,
+                calendars,
+                errorMessage,
+                showInactive
+            };
+        },
+        methods: {
+            editCalendar(cal) {
+                cal.editing = true;
+            },
+            cancelEdit(cal) {
+                resetEdits(cal);
+            },
+            async saveCalendar(cal) {
+                cal.errorMessage = '';
+                const edited = fromEdits(cal);
+                cal.issaving = true;
+                try {
+                    const saved = Number.isFinite(cal.id)
+                        ? await makeApiCall('/', edited, 'POST')
+                        : await makeApiCall('/' + cal.id, edited, 'PUT');
+                    this.allCalendars.splice(this.allCalendars.findIndex(c => c.id === cal.id), 1, resetEdits(saved));
+                } catch (err) {
+                    cal.errorMessage = typeof err.details === 'string' ? err.details : err.message;
+                }
+                cal.issaving = false;
+            }
+        },
+    };
+
+    createApp(TestApp).mount('div.calendar-mgt');
+
+</script>

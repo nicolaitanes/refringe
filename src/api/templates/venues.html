@@ -8,14 +8,24 @@
         <thead>
         <tr>
             <th>Name</th>
+            <th>Notes</th>
+            <th>Tags</th>
             <th>Updated</th>
+            {{#each venues.[0].questions}}
+            <th>{{ question }}</th>
+            {{/each}}
         </tr>
         </thead>
         <tbody>
-        {{#each venues}}
+        {{#each venues as |venue|}}
         <tr>
-            <td><a href="/venues/{{id}}">{{name}}</a></td>
-            <td>{{updated}}</td>
+            <td><a href="/venues/{{venue.id}}">{{venue.name}}</a></td>
+            <td><notes-button level="{{auth.l}}" venueid="{{venue.id}}"></notes-button></td>
+            <td><tag-chip entity-type="venue" :entityid="'{{venue.id}}'" class-name="venue-tags"></tag-chip></td>
+            <td>{{venue.updated}}</td>
+            {{#each venue.questions}}
+            <td>{{answer}}</td>
+            {{/each}}
         </tr>
         {{/each}}
         </tbody>

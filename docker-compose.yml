@@ -35,6 +35,7 @@ services:
     command: ["npm", "start"]
     volumes:
       - ./src/api:/api
+      - ./logs:/app-logs
     networks:
       - app-network
     restart: unless-stopped

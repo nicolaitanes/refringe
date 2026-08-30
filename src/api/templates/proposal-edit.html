@@ -9,6 +9,9 @@
               <input type="checkbox" name="active" id="active" {{#if proposal.active}}checked{{/if}}>
               Active
             </label>
+            <label>Tags:</label>
+            <tag-chip entity-type="proposal" :entityid="'{{proposal.id}}'" class-name="proposal-tags"></tag-chip>
+            <notes-button level="{{auth.l}}" proposalid="{{proposal.id}}" style="position: absolute; top: .5em; right: .5em;"></notes-button>
             {{/if}}
 
             <label for="title">Title:</label>

@@ -13,23 +13,33 @@
       <th>Email</th>
       <th>Username</th>
       <th>Role</th>
+      <th>Notes</th>
+      <th>Tags</th>
+      {{#each users.[0].questions}}
+      <th>{{ question }}</th>
+      {{/each}}
     </tr>
   </thead>
   <tbody>
-    {{#each users}}
+    {{#each users as |user|}}
     <tr data-id="{{id}}">
       <td>
-        {{#if active}}
+        {{#if user.active}}
         ✔️
         {{else}}
         🚫
         {{/if}}
       </td>
-      <td><a href="/user/{{id}}">{{fullname}}</a></td>
-      <td>{{phone}}</td>
-      <td>{{email}}</td>
-      <td>{{username}}</td>
-      <td>{{role}}</td>
+      <td><a href="/user/{{user.id}}">{{user.fullname}}</a></td>
+      <td>{{user.phone}}</td>
+      <td>{{user.email}}</td>
+      <td>{{user.username}}</td>
+      <td>{{user.role}}</td>
+      <td><notes-button level="{{auth.l}}" userid="{{user.id}}"></notes-button></td>
+      <td><tag-chip entity-type="user" :entityid="'{{user.id}}'" class-name="user-tags"></tag-chip></td>
+      {{#each user.questions}}
+      <td>{{answer}}</td>
+      {{/each}}
     </tr>
     {{/each}}
   </tbody>

@@ -147,6 +147,9 @@ export const initAuth = app => {
             u.phone = u.phone || '';
             u.email = u.email || '';
         }
+        await Promise.all(users.map(async u => {
+            u.questions = await questionsDB.listAnswers({ userid: u.id });
+        });
         return renderTemplate({ users, template: 'users' })(req, res);
     });
     
