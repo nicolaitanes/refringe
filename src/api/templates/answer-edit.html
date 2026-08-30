@@ -1,8 +1,8 @@
 {{#with item}}
     {{#if isTextarea}}
-        <label for="{{ fieldname }}" style="grid-column-start: 1; grid-column-end: 3;">
+        <label for="{{ fieldname }}" class="twofields">
           {{#if required}}*{{/if}}{{ question }}</label>
-        <textarea name="{{ fieldname }}" id="{{ fieldname }}" {{#if required}}required{{/if}} {{#if pattern}}pattern="{{ pattern }}"{{/if}} style="grid-column-start: 1; grid-column-end: 3;">{{ answer }}</textarea>
+        <textarea name="{{ fieldname }}" id="{{ fieldname }}" {{#if required}}required{{/if}} {{#if pattern}}pattern="{{ pattern }}"{{/if}} class="twofields">{{ answer }}</textarea>
     {{else}}
         <label for="{{ fieldname }}">{{#if required}}*{{/if}}{{ question }}</label>
         {{#if isChoices}}
@@ -24,7 +24,7 @@
     {{/if}}
 
     {{#if children}}
-        <details class="children" style="grid-column-start: 1; grid-column-end: 3;">
+        <details class="children twofields">
             <!-- TODO expand/deactivate based on parent selection -->
             <div class="formfields">
                 {{#each children}}

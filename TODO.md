@@ -2,10 +2,9 @@
 
 ## Features
 
-- [ ] calendar-edit (fullcalendar and shows)
-- [ ] calendar-detail (call for work etc)
-- [ ] schedule (by day/venue/...)
-- [ ] venue map
+- [ ] calendar-edit (fullcalendar and shows, adapt from old project)
+- [ ] schedule (by day/venue/..., adapt fron old project)
+- [ ] venue map (adapt from old project)
 - [ ] iframeable monthly fullcalendar, in seeded / and /cur-events/
     - include public callforwork deadlines
 - [ ] schedule preview/admin tools
@@ -24,6 +23,7 @@
     - [ ] by flag on show
 - [ ] capture venue lat/long on map
 - [ ] better breadcrumbs
+- [ ] links from calendar-detail
 - [ ] sortable tables/lists
 - [ ] filterable tables/lists
 - [ ] csv export of proposals/users/venues with q/a, tags, notes

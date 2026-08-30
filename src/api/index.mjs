@@ -11,7 +11,7 @@ import { router as notes } from './notes.js';
 import { pgdb } from './pgdb.js';
 import { router as pages, renderPage } from './pages.js';
 import { router as proposals, proposalsDB } from './proposals.js';
-import { router as questions } from './questions.js';
+import { router as questions, markdownConverter } from './questions.js';
 import { router as tags } from './tags.js';
 import { initTemplates, renderTemplate } from './templates.js';
 import { usersDB } from './users.js';
@@ -60,6 +60,10 @@ app.get('/testdb', async (req, res) => {
     res.set('Content-Type', 'text/plain');
     res.send(Buffer.from(JSON.stringify(result.rows[0], null, 2)));
 });
+
+app.post('/render-markdown', (req, res) => res.json({
+    html: markdownConverter.makeHtml(req.body.markdown || '')
+}));
 
 app.get('/:template', renderTemplate());
 

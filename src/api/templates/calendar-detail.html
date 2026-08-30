@@ -1,3 +1,23 @@
-<!-- TODO relevant public info: startdate, enddate, publicname??name, ispublic && notes, (calling_users || calling_public) && (callforwork, deadline) -->
+{{> header title=calendar.name sitename=sitename opengraph=opengraph }}
+{{> breadcrumb title="Event" }}
 
+<div class="ma1 calendar-detail">
+  <h2>{{ calendar.name }}</h2>
+  <div>{{{ calendar.notesHTML }}}</div>
+  <div>
+    <i>{{ calendar.startdate }} - {{ calendar.enddate }}</i>
+  </div>
+  {{#if calendar.callforwork}}
+  <div>
+    <b>Call for work:</b>
+    <div>{{{ calendar.callforworkHTML }}}</div>
+  </div>
+  {{/if}}
+  {{#if calendar.deadline}}
+  <div>
+    <b>Deadline: {{ calendar.deadline }}</b>
+  </div>
+
+  <!-- TODO links to schedule -->
+</div>
 

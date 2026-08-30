@@ -2,6 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import SQL from 'sql-template-strings'
 import { pgdb } from './pgdb.js';
+import { markdownConverter } from './questions.js';
 import { renderTemplate } from './templates.js';
 
 const upload = multer();
@@ -15,14 +16,24 @@ export const calendarsDB = {
         query.append(SQL` order by c.startdate, p.priority, c.name`);
         if ('limit' in q) query.append(SQL` limit ${q.limit}`);
         const result = await pgdb.query(query);
+        for (const row of result.rows) {
+            if (row.notes) row.notesHTML = markdownConverter.makeHtml(row.notes);
+            if (row.callforwork) row.callforworkHTML = markdownConverter.makeHtml(row.callforwork);
+        }
         return result.rows;
     },
     async get(id) {
         const result = await pgdb.query(SQL`select * from calendars where id = ${id}`);
-        return result.rows[0];
+        cost row = result.rows[0];
+        if (row?.notes) row.notesHTML = markdownConverter.makeHtml(row.notes);
+        if (row?.callforwork) row.callforworkHTML = markdownConverter.makeHtml(row.callforwork);
+        return row;
     },
     async add(q) {
-        return await pgdb.add('calendars', q, SQL`insert into calendars (name, notes, startdate, enddate, deadline, callforwork, calling_public, calling_users) values (${q.name || ''}, ${q.notes || ''}, ${q.startdate}, ${q.enddate}, ${q.deadline}, ${q.callforwork}, ${!!q.calling_public}, ${!!q.calling_users}) returning *`);
+        const row = await pgdb.add('calendars', q, SQL`insert into calendars (name, notes, startdate, enddate, deadline, callforwork, calling_public, calling_users) values (${q.name || ''}, ${q.notes || ''}, ${q.startdate}, ${q.enddate}, ${q.deadline}, ${q.callforwork}, ${!!q.calling_public}, ${!!q.calling_users}) returning *`);
+        if (row?.notes) row.notesHTML = markdownConverter.makeHtml(row.notes);
+        if (row?.callforwork) row.callforworkHTML = markdownConverter.makeHtml(row.callforwork);
+        return row;
     },
     async update(id, q) {
         const query = SQL`update calendars set updated=now()`;
@@ -36,7 +47,10 @@ export const calendarsDB = {
         if ('calling_public' in q) query.append(SQL`, calling_public=${q.calling_public}`);
         if ('calling_users' in q) query.append(SQL`, calling_users=${q.calling_users}`);
         query.append(SQL` where id=${id} returning *`);
-        return await pgdb.update('calendars', id, q, query);
+        const row = await pgdb.update('calendars', id, q, query);
+        if (row?.notes) row.notesHTML = markdownConverter.makeHtml(row.notes);
+        if (row?.callforwork) row.callforworkHTML = markdownConverter.makeHtml(row.callforwork);
+        return row;
     },
     // with mainly calendar details
     async listLinked(entity, id, andLinkable = false) {
@@ -98,7 +112,10 @@ export const calendarsDB = {
     },
     async getPublic(key) {
         const result = await pgdb.query(SQL`select p.*, c.notes, c.startdate, c.enddate from publiccalendars p left join calendars c on p.calendarid = c.id where p.key = ${key} order by ispublic desc, priority limit 1`);
-        return result.rows[0];
+        const row = result.rows[0];
+        if (row?.notes) row.notesHTML = markdownConverter.makeHtml(row.notes);
+        if (row?.callforwork) row.callforworkHTML = markdownConverter.makeHtml(row.callforwork);
+        return row;
     },
     async addPublic(q) {
         return await pgdb.add('publiccalendars', q, SQL`insert into publiccalendars (publicname, key, calendarid, ispublic, priority) values (${q.publicname || ''}, ${q.key || ''}, ${q.calendarid}, ${!!q.ispublic}, ${q.priority ?? 100}) returning *`);
@@ -144,10 +161,16 @@ router.get('/:id', async (req, res) => {
         if (status !== 'public' && status !== 'usercall') return res.status(403).send('Forbidden');
     }
     if (req.headers.accept?.includes('application/json')) return res.json(calendar);
+    if (!status.endsWith('call')) {
+        calendar.callforwork = null;
+        calendar.deadline = null;
+    }
+    calendar.name = calendar.publicname || calendar.name;
     return renderTemplate({
         template: req.auth && req.auth.l <= 10 ? 'calendar-edit' : 'calendar-detail',
         calendar,
-        calendarJSON: JSON.stringify(calendar).replace(/\\/g, '\\\\')
+        calendarJSON: JSON.stringify(calendar).replace(/\\/g, '\\\\'),
+        status
     })(req, res);
 });
 

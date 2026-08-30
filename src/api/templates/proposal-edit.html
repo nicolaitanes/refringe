@@ -5,7 +5,7 @@
     <form action="/proposals/{{ proposal.id }}" method="POST" enctype="multipart/form-data">
         <div class="formfields">
             {{#if isOrg}}
-            <label for="active" style="grid-column-start: 1; grid-column-end: 3;">
+            <label for="active" class="twofields">
               <input type="checkbox" name="active" id="active" {{#if proposal.active}}checked{{/if}}>
               Active
             </label>

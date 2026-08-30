@@ -42,8 +42,7 @@
       </div>
       <textarea
         v-if="selectedPage"
-        style="grid-column-start: 1; grid-column-end: 3;"
-        class="flex-grow-1"
+        class="flex-grow-1 twofields"
         name="content"
         :value="selectedPage.newContent"
         @input="updateSelected('newContent', $event.target.value)"

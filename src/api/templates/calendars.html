@@ -37,7 +37,7 @@
     </div>
     <div v-else :class="{ 'calendar-summary': true, inactive: !cal.active }">
       <h3>[[ cal.publicname || cal.name ]][[ !cal.publicname || cal.publicname === cal.name ? '' : '('+cal.name+')' ]]</h3>
-      <p>[[ cal.notes ]]</p>
+      <div v-html="cal.notesHTML || ''"></div>
       <div v-if="cal.startdate || cal.enddate">
         <i>[[ cal.startdate || '' ]] - [[cal.enddate || '' ]]</i>
       </div>
@@ -48,7 +48,7 @@
         <b>Call for work:</b>
         <i v-if="cal.calling_users">(Members)</i>
         <i v-if="cal.calling_public">(Public)</i>
-        <pre>[[ cal.callforwork ]]</pre>
+        <div v=html="cal.callforworkHTML || ''"></div>
       </div>
       <div v-if="cal.deadline">
         <b>Deadline: [[ cal.deadline ]]</b>

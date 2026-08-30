@@ -5,7 +5,7 @@ import { pgdb } from './pgdb.js';
 import { proposalsDB } from './proposals.js';
 import { renderTemplate } from './templates.js';
 
-const markdownConverter = new showdown.Converter({
+export const markdownConverter = new showdown.Converter({
     safeMode: true,
     headerLevelStart: 3,
     simplifiedAutoLink: true,
