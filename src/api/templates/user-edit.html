@@ -34,6 +34,14 @@
       <input type="text" name="phone" id="phone" value="{{ user.phone }}">
       <label for="email">Email:</label>
       <input type="text" name="email" id="email" value="{{ user.email }}">
+      <label for="street">Street Address:</label>
+      <input type="text" name="street" id="street" value="{{user.street}}">
+      <label for="city">City:</label>
+      <input type="text" name="city" id="city" value="{{user.city}}">
+      <label for="state">State:
+      <input type="text" name="state" id="state" value="{{user.state}}"></label>
+      <label for="zip">Zip:
+      <input type="text" name="email" id="email" value="{{user.email}}"></label>
 
       {{#each answers}}
         {{> answer-edit item=this }}

@@ -37,7 +37,7 @@ logDB.then(logdb => logdb.run(`
 pgdb.logEvent = async (op, context, tbl=null, sql=null, id=null) => {
     const jsonContext = JSON.stringify(context, null, 2);
     console.log(`${op} ${tbl}\n${jsonContext}\n`);
-    (await logDB).run(SQL`insert into events (op, tblid, tbl, sql, context) values (${op}, ${id}, ${tbl}, ${sql}, ${jsonContext})`);
+    (await logDB).run(SQL`insert into events (op, tblid, tbl, sql, context) values (${op}, ${id}, ${tbl}, ${sql.text}, ${jsonContext})`);
 };
 
 pgdb.add = async (tbl, context, q) => {

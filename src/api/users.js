@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import SQL from 'sql-template-strings'
 import { pgdb } from './pgdb.js';
 
-const saltRounds = 10;
+const saltRounds = 12;
 
 export const usersDB = {
     async getByID(id) {
@@ -24,19 +24,19 @@ export const usersDB = {
     async create(userdata) {
         const passhash = await bcrypt.hash(userdata.password, saltRounds);
         return await pgdb.add('users', userdata, SQL`insert into users
-            (username, roleid, passhash, fullname)
-            values (${userdata.username}, ${userdata.roleid}, ${passhash}, ${userdata.fullname})
+            (username, roleid, passhash, fullname, phone, email, street, city, state, zip)
+            values (${userdata.username}, ${userdata.roleid}, ${passhash}, ${userdata.fullname}, ${userdata.phone}, ${userdata.email}, ${userdata.street}, ${userdata.city}, ${userdata.state}, ${userdata.zip})
             returning *`);
     },
     async list() {
-        const result = await pgdb.query(SQL`select u.id, u.active, r.level, u.username, u.fullname, u.phone, u.email from users u join roles r on u.roleid = r.id order by u.active desc, u.fullname`);
+        const result = await pgdb.query(SQL`select u.id, u.active, r.level, u.username, u.fullname, u.phone, u.email, u.street, u.city, u.state, u.zip from users u join roles r on u.roleid = r.id order by u.active desc, u.fullname`);
         return result.rows;
     },
     async update(id, userdata) {
-        return await pgdb.update('users', id, userdata, userdata.roleid !== undefined
-           ? SQL`update users set fullname=${userdata.fullname}, phone=${userdata.phone}, email=${userdata.email}, roleid=${userdata.roleid}, active=${userdata.active} where id=${id}`
-           : SQL`update users set fullname=${userdata.fullname}, phone=${userdata.phone}, email=${userdata.email} where id=${id}`
-        );
+        const query = SQL`update users set fullname=${userdata.fullname}, phone=${userdata.phone}, email=${userdata.email}, street=${userdata.street}, city=${userdata.city}, state=${userdata.state}, zip=${userdata.zip}`;
+        if ('roleid' in userdata) query.append(SQL`, roleid=${userdata.roleid}, active=${userdata.active}`);
+        query.append(SQL` where id=${id}`);
+        return await pgdb.update('users', id, userdata, query);
     },
     async updatePassword(id, password) {
         const passhash = await bcrypt.hash(userdata.password, saltRounds);

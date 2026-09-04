@@ -180,6 +180,8 @@ export const initAuth = app => {
             user: req.body,
             answers: questions.map(q => ({ ...q, answer: req.body[q.fieldname] }))
         })(req, res);
+
+        pgdb.logEvent('signup', req.body);
         
         if (req.body.robot !== 'decal') return renderError('Are you a robot?');
 
@@ -191,8 +193,14 @@ export const initAuth = app => {
         const user = await usersDB.create({
             username: req.body.username,
             password: req.body.password,
-            fullname: req.body.fullname,
-            roleid
+            fullname: req.body.fullname.trim(),
+            roleid,
+            phone: req.body.phone || null,
+            email: req.body.email || null,
+            street: req.body.street || null,
+            city: req.body.city || null,
+            state: req.body.state || null,
+            zip: req.body.zip || null,
         });
         if (!user) return res.status(500).send('Error');
         if (!req.auth.u) {
@@ -249,6 +257,10 @@ export const initAuth = app => {
             fullname: req.body.fullname.trim(),
             phone: req.body.phone || null,
             email: req.body.email || null,
+            street: req.body.street || null,
+            city: req.body.city || null,
+            state: req.body.state || null,
+            zip: req.body.zip || null,
             ...(req.auth.l === 0
                 ? {
                     active: ['true', 'on'].includes(req.body.active),

@@ -3,7 +3,7 @@
 ## Features
 
 - [ ] calendar-edit (fullcalendar and shows, adapt from old project)
-- [ ] schedule (by day/venue/..., adapt fron old project)
+- [ ] schedule (by day/venue/..., adapt from old project)
 - [ ] venue map (adapt from old project)
 - [ ] iframeable monthly fullcalendar, in seeded / and /cur-events/
     - include public callforwork deadlines

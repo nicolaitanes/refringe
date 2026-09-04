@@ -8,7 +8,9 @@ stop:
 	docker compose stop
 down:
 	docker compose down
-remove:
+remove: stop
 	docker compose down -v
+clean: remove
+	rm logs/refringe-logs.sqlite
 apilogs:
 	docker compose logs refringe-api

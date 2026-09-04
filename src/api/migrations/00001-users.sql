@@ -14,5 +14,9 @@ create table users (
     revocation int not null default 1,
     fullname text,
     phone text,
-    email text
+    email text,
+    street text,
+    city text,
+    state text,
+    zip text
 );

@@ -86,6 +86,8 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
     try {
+        pgdb.logEvent('proposal', req.body);
+        
         const proposal = parseProposal(req.body);
         const newProposal = await proposalsDB.add({ ...proposal, userid: req.auth.u });
 
@@ -113,6 +115,7 @@ router.post('/', async (req, res) => {
 
 router.post('/:id', async (req, res) => {
     try {
+        pgdb.logEvent('proposal edit', req.body);
         const proposal = parseProposal(req.body);
         await proposalsDB.update(req.params.id, proposal);
 
