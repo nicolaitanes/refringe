@@ -32,9 +32,9 @@
     <template v-if="selectedPage.urlpath">
       <div class="formfields">
         <label for="urlpath">Path:</label>
-        <input id="urlpath" name="urlpath" required :value="selectedPage.newUrlpath" @input="updateSelected('newUrlpath', $event.target.value)">
+        <input id="urlpath" name="urlpath" required v-model="selectedPage.newUrlpath"">
         <span>
-          <label v-if="selectedPage.urlpath[0] === '/' && selectedPage.urlpath[1]"><input type="checkbox" :checked="selectedPage.newActive" @change="updateSelected('newActive', $event.target.checked)"> Active</label>
+          <label v-if="selectedPage.urlpath[0] === '/' && selectedPage.urlpath[1]"><input type="checkbox" v-model="selectedPage.newActive"> Active</label>
         </span>
         <span><a target="_blank" :href="selectedPage.newUrlpath" :class="{ inactive: !selectedPage.active }">[[ base + selectedPage.newUrlpath ]]</a></span>
         <button type="submit">Preview</button>
@@ -44,8 +44,7 @@
         v-if="selectedPage"
         class="flex-grow-1 twofields"
         name="content"
-        :value="selectedPage.newContent"
-        @input="updateSelected('newContent', $event.target.value)"
+        v-model="selectedPage.newContent"
       ></textarea>
     </template>
   </form>
@@ -116,12 +115,6 @@
                 const id = event.target.value;
                 const page = this.pages.find(p => p.id === id);
                 if (page) this.editPage(page);
-            },
-            updateSelected(field, value) {
-                this.selectedPage = {
-                    ...this.selectedPage,
-                    [field]: value
-                };
             },
             async saveSelected(event) {
                 const page = {

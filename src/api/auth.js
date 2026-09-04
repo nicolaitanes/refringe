@@ -149,7 +149,7 @@ export const initAuth = app => {
         }
         await Promise.all(users.map(async u => {
             u.questions = await questionsDB.listAnswers({ userid: u.id });
-        });
+        }));
         return renderTemplate({ users, template: 'users' })(req, res);
     });
     

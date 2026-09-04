@@ -3,40 +3,48 @@
 
 <div class="ma1 calendar-mgt">
   <div>
-    <label><input type="checkbox" :checked="showInactive">Show Inactive</label>
+    <label><input type="checkbox" v-model="showInactive">Show Inactive</label>
   </div>
   
+  <template v-if="errorMessage">
+    <div class="error">[[ errorMessage ]]</div>
+  </template>
+  
   <template v-for="cal of calendars">
-    <div v-if="cal.editing">
+    <form v-if="cal.editing" @submit="$event.preventDefault(); saveCalendar(cal)">
       <div class="formfields">
         <label for="active">Active</label>
-        <input id="active" name="active" type="checkbox" :checked="cal.newActive">
+        <input id="active" name="active" type="checkbox" v-model="cal.newActive">
         <label for="name">Working Title:</label>
-        <input id="name" name="name" type="text" :value="cal.newName">
-        <label for="startdate">Start Date:</label>
-        <input id="startdate" name="startdate" type="date" :value="cal.newStartdate">
-        <label for="enddate">End Date:</label>
-        <input id="enddate" name="enddate" type="date" :value="cal.newEnddate">
-        <label><input id="ispublic" name="ispublic" type="checkbox" :checked="cal.newIspublic"> Published under key:</label>
-        <input id="key" name="key" type="text" :value="cal.newKey">
+        <input id="name" name="name" type="text" v-model="cal.newName" required>
+        <label for="startdate">Start:
+          <input id="startdate" name="startdate" type="date" v-model="cal.newStartdate"></label>
+        <label for="enddate">End:
+          <input id="enddate" name="enddate" type="date" v-model="cal.newEnddate"></label>
+        <label><input id="ispublic" name="ispublic" type="checkbox" v-model="cal.newIspublic"> Published under key:</label>
+        <input id="key" name="key" type="text" v-model="cal.newKey" :required="ispublic">
         <label for="publicname">Public Title:</label>
-        <input id="publicname" name="publicname" type="text" :value="cal.newPublicname">
+        <input id="publicname" name="publicname" type="text" v-model="cal.newPublicname">
         <label for="notes" class="twofields">Notes:</label>
-        <textarea id="notes" name="notes" :value="cal.newNotes"></textarea>
+        <textarea id="notes" name="notes" v-model="cal.newNotes" class="twofields"></textarea>
         <label for="callforwork" class="twofields">Call For Work:</label>
-        <textarea id="callforwork" name="callforwork" :value="cal.newCallforwork"></textarea>
+        <textarea id="callforwork" name="callforwork" v-model="cal.newCallforwork" class="twofields"></textarea>
         <label for="deadline">Deadline:</label>
-        <input id="deadline" name="deadline" type="date" :value="cal.newDeadline">
-        <label><input id="calling_users" name="calling_users" type="checkbox" :checked="cal.newCalling_users"> Calling members</label>
-        <label><input id="calling_public" name="calling_public" type="checkbox" :checked="cal.newCalling_public"> Calling the public</label>
+        <input id="deadline" name="deadline" type="date" v-model="cal.newDeadline">
+        <label><input id="calling_users" name="calling_users" type="checkbox" v-model="cal.newCalling_users"> Calling members</label>
+        <label><input id="calling_public" name="calling_public" type="checkbox" v-model="cal.newCalling_public"> Calling the public</label>
         <!-- TODO button to email members with call for work -->
       </div>
 
-      <button :disabled="cal.issaving" @click="cancelEdit(cal)">Cancel</button>
-      <button :disabled="cal.issaving" @click="saveCalendar(cal)">Save</button>
-    </div>
+      <template v-if="cal.errorMessage">
+        <div class="error">[[ cal.errorMessage ]]</div>
+      </template>
+      
+      <button :disabled="cal.issaving" type="button" @click="cancelEdit(cal)">Cancel</button>
+      <button :disabled="cal.issaving">Save</button>
+    </form>
     <div v-else :class="{ 'calendar-summary': true, inactive: !cal.active }">
-      <h3>[[ cal.publicname || cal.name ]][[ !cal.publicname || cal.publicname === cal.name ? '' : '('+cal.name+')' ]]</h3>
+      <h3>[[ cal.publicname || cal.name || '(no name)' ]][[ !cal.publicname || cal.publicname === cal.name ? '' : '('+cal.name+')' ]]</h3>
       <div v-html="cal.notesHTML || ''"></div>
       <div v-if="cal.startdate || cal.enddate">
         <i>[[ cal.startdate || '' ]] - [[cal.enddate || '' ]]</i>
@@ -56,19 +64,22 @@
       <button @click="editCalendar(cal)">Edit</button>
     </div>
   </template>
+  <button @click="addCalendar()">+ New Event</button>
 </div>
 
 <script type="module">
     import { computed, createApp, ref } from 'vue';
 
-    const resetEdits = (cal) => Object.assign(cal, {
-        editing: false,
+    let nextFakeID = -1;
+
+    const resetEdits = (cal, editing = false) => Object.assign(cal, {
+        editing,
         errorMessage: '',
         newActive: cal.active,
         newName: cal.name,
         newNotes: cal.notes,
         newStartdate: cal.startdate,
-        newEnddate: cal.endddate,
+        newEnddate: cal.enddate,
         newDeadline: cal.deadline,
         newCallforwork: cal.callforwork,
         newCalling_public: cal.calling_public,
@@ -85,7 +96,7 @@
         name: cal.newName,
         notes: cal.newNotes,
         startdate: cal.newStartdate,
-        endddate: cal.newEnddate,
+        enddate: cal.newEnddate,
         deadline: cal.newDeadline,
         callforwork: cal.newCallforwork,
         calling_public: cal.newCalling_public,
@@ -98,8 +109,11 @@
 
     async function makeApiCall(path, params=null, method='GET') {
         const fullpath = '/calendars' + path;
-        const headers = { Accept: 'application/json' };
-        const response = await (method === GET
+        const headers = {
+            Accept: 'application/json',
+            'Content-Type': 'application/json'
+        };
+        const response = await (method === 'GET'
              ? fetch(fullpath, { method, headers, params })
              : fetch(fullpath, { method, headers, body: JSON.stringify(params) })
         );
@@ -119,9 +133,10 @@
         delimiters: ['[[', ']]'],
         setup() {
             const allCalendars = ref(JSON.parse(`{{{ calendars }}}`));
-            for (const cal of allCalendars) resetEdits(cal);
+            for (const cal of allCalendars.value) resetEdits(cal);
+            const errorMessage = ref('');
             const showInactive = ref(false);
-            const calendars = computed(() => showInactive ? allCalendars : allCalendars.filter(c => c.active));
+            const calendars = computed(() => showInactive.value ? allCalendars.value.slice() : allCalendars.value.filter(c => c.active));
   
             return {
                 allCalendars,
@@ -131,6 +146,25 @@
             };
         },
         methods: {
+            addCalendar() {
+                this.allCalendars.push(resetEdits({
+                    editing: true,
+                    id: nextFakeID--,
+                    active: true,
+                    name: '',
+                    notes: '',
+                    startdate: null,
+                    enddate: null,
+                    deadline: null,
+                    callforwork: '',
+                    calling_public: false,
+                    calling_users: false,
+                    publicname: null,
+                    key: null,
+                    ispublic: false,
+                    priority: 100
+                }, true));
+            },
             editCalendar(cal) {
                 cal.editing = true;
             },

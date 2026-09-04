@@ -9,6 +9,7 @@ import path from 'path';
 import pg from 'pg';
 import SQL from 'sql-template-strings'
 import sqlite3 from 'sqlite3';
+import { open } from 'sqlite';
 
 export const pgdb = new pg.Pool({
     host: 'refringe-pg',
@@ -28,30 +29,31 @@ logDB.then(logdb => logdb.run(`
     op text,
     tblid text,
     tbl text,
+    sql text,
     context jsonb
   )
 `));
 
-pgdb.logEvent = async (op, context, tbl=null, id=null) => {
-    const jsonContext = JSON,.stringify(context, null, 2);
+pgdb.logEvent = async (op, context, tbl=null, sql=null, id=null) => {
+    const jsonContext = JSON.stringify(context, null, 2);
     console.log(`${op} ${tbl}\n${jsonContext}\n`);
-    (await logDB).run(SQL`insert into events (op, tblid, tbl, context) values (${op}, ${id}, ${tbl}, ${jsonCotext})`);
+    (await logDB).run(SQL`insert into events (op, tblid, tbl, sql, context) values (${op}, ${id}, ${tbl}, ${sql}, ${jsonContext})`);
 };
 
 pgdb.add = async (tbl, context, q) => {
-    await pgdb.logEvent('I', context, tbl);
+    await pgdb.logEvent('I', context, tbl, q);
     const result = await pgdb.query(q);
     return result.rows[0];
 };
 
 pgdb.update = async (tbl, id, context, q) => {
-    await pgdb.logEvent('U', { ...context, id }, tbl);
+    await pgdb.logEvent('U', { ...context, id }, tbl, q, id);
     const result = await pgdb.query(q);
     return result.rows[0];
 };
 
 pgdb.upsert = async (tbl, context, q) => {
-    await pgdb.logEvent('P', context, tbl);
+    await pgdb.logEvent('P', context, tbl, q);
     const result = await pgdb.query(q);
     return result.rows[0];
 };
@@ -63,7 +65,7 @@ pgdb.delete = async (tbl, id, q, context) => {
         query.append(SQL` where id=${id}`);
         context = await pgdb.query(query);
     }
-    await pgdb.logEvent('D', context ?? { id }, tbl);
+    await pgdb.logEvent('D', context ?? { id }, tbl, q, id);
     if (q) await pgdb.query(q);
 };
 

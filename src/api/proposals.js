@@ -68,7 +68,7 @@ router.get('/', async (req, res) => {
     if (req.headers.accept?.includes('application/json')) return res.json({ proposals });
     await Promise.all(proposals.map(async p => {
         p.questions = await questionsDB.listAnswers({ proposalid: p.id });
-    });
+    }));
     return renderTemplate({ template: 'proposals', proposals })(req, res);
 });
 

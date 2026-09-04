@@ -24,7 +24,7 @@ export const calendarsDB = {
     },
     async get(id) {
         const result = await pgdb.query(SQL`select * from calendars where id = ${id}`);
-        cost row = result.rows[0];
+        const row = result.rows[0];
         if (row?.notes) row.notesHTML = markdownConverter.makeHtml(row.notes);
         if (row?.callforwork) row.callforworkHTML = markdownConverter.makeHtml(row.callforwork);
         return row;
@@ -200,7 +200,7 @@ router.put('/:id', async (req, res) => {
     try {
         const calendar = await calendarsDB.update(req.params.id, req.body);
         if (req.body.publicid || req.body.key) {
-            const pc = { ...req.body, id: req.body.publicid };
+            const pc = { ...req.body, id: req.body.publicid, calendarid: req.params.id };
             pc.publicname ||= calendar.name;
             const { id: publicid, ...newpc } = pc.id
                 ? await calendarsDB.updatePublic(pc.id, pc)
