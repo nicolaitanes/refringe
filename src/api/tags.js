@@ -43,8 +43,11 @@ export const tagsDB = {
     },
     async listLinked(contextType, recordid, q) {
         const query = SQL`select t.*, `;
-        query.append(`l.${contextType}id from tags t join tags_${contextType}s l on t.id = l.tagid where l.${contextType}id = `);
-        query.append(SQL`${recordid}`);
+        query.append(`l.${contextType}id from tags t join tags_${contextType}s l on t.id = l.tagid where l.${contextType}id is not null`);
+        if (recordid) {
+            query.append(` and l.${contextType}id`);
+            query.append(SQL` = ${recordid}`);
+        }
         if ('active' in q) query.append(SQL` and t.active = ${![false, 'false'].includes(q.active)}`);
         if ('level' in q) {
             if (q.level > 10) query.append(SQL` and t.is_visible_to_public`)
@@ -97,6 +100,14 @@ router.put('/:id', async (req, res) => {
         console.log(err);
         return res.status(500).send('Unknown Error');
     }
+});
+
+router.get('/:contextType/', async (req, res) => {
+    const tbl = req.params.contextType;
+    if (!['proposal', 'show', 'user', 'venue'].includes(tbl)) return res.status(400).send('Bad Request');
+    const q = { ...req.query, level: req.auth.l, active: true };
+    const tags = await tagsDB.listLinked(tbl, null, q);
+    return res.json({ tags });
 });
 
 router.get('/:contextType/:recordid', async (req, res) => {

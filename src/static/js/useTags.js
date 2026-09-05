@@ -217,10 +217,10 @@ export function useTags() {
     // Get tags for a proposal
     async function getTagsForProposal(id) {
         try {
-            const result = await makeApiCall('/proposal/' + id, null, 'GET');
+            const result = await makeApiCall('/proposal/' + (id || ''), null, 'GET');
             if (!Array.isArray(result?.tags)) return [];
             proposalTags.value = result.tags;
-            return result;
+            return result.tags;
         } catch (err) {
             console.error('Error getting tags for proposal:', err);
             return [];
@@ -230,10 +230,10 @@ export function useTags() {
     // Get tags for a show
     async function getTagsForShow(id) {
         try {
-            const result = await makeApiCall('/show/' + id, null, 'GET');
+            const result = await makeApiCall('/show/' + (id || ''), null, 'GET');
             if (!Array.isArray(result?.tags)) return [];
             showTags.value = result.tags;
-            return result;
+            return result.tags;
         } catch (err) {
             console.error('Error getting tags for show:', err);
             return [];
@@ -243,10 +243,10 @@ export function useTags() {
     // Get tags for a user
     async function getTagsForUser(id) {
         try {
-            const result = await makeApiCall('/user/' + id, null, 'GET');
+            const result = await makeApiCall('/user/' + (id || ''), null, 'GET');
             if (!Array.isArray(result?.tags)) return [];
             userTags.value = result.tags;
-            return result;
+            return result.tags;
         } catch (err) {
             console.error('Error getting tags for user:', err);
             return [];
@@ -256,10 +256,10 @@ export function useTags() {
     // Get tags for a venue
     async function getTagsForVenue(id) {
         try {
-            const result = await makeApiCall('/venue/' + id, null, 'GET');
+            const result = await makeApiCall('/venue/' + (id || ''), null, 'GET');
             if (!Array.isArray(result?.tags)) return [];
             venueTags.value = result.tags;
-            return result;
+            return result.tags;
         } catch (err) {
             console.error('Error getting tags for venue:', err);
             return [];

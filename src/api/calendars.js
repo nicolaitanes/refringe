@@ -57,7 +57,7 @@ export const calendarsDB = {
         const query = SQL`select c.name, c.startdate, c.enddate, l.* from calendars c`;
         if (andLinkable) query.append(` left`);
         query.append(` join calendars_${entity}s l on c.id = l.calendarid and c.active and ${entity}id =`);
-        query.append(SQL` ${id} where c.active and (calendarid is not null or c.enddate < now()) order by startdate, name`);
+        query.append(SQL` ${id} where c.active and (calendarid is not null or c.enddate > now()) order by startdate, name`);
         const result = await pgdb.query(query);
         return result.rows;
     },
@@ -74,16 +74,16 @@ export const calendarsDB = {
         query.append(SQL` (${id}, ${entityid}, ${context.active}, ${context.status})`);
         query.append(` on conflict (calendarid, ${entity}id) do update set`);
         query.append(SQL` active=${context.active}, status=${context.status} returning *`);
-        return await pgdb.upsert('calendars_'+entity, context, q);
+        return await pgdb.upsert('calendars_'+entity, context, query);
     },
     async unlink(id, entity, entityid) {
         const query = SQL`update`;
         query.append(` calendars_${entity}s set active = false where ${entity}id =`);
         query.append(SQL` ${entityid} and calendarid=${calendarid}`);
-        await pgdb.update('calendars_'+entity, [id, entityid], { calendarid: id, [entity+'id']: entityid, active: false }, q);
+        await pgdb.update('calendars_'+entity, [id, entityid], { calendarid: id, [entity+'id']: entityid, active: false }, query);
     },
     async listProposals(id) {
-        const result = await pgdb.query(SQL`select p.*, u.fullname from proposals p join users u on p.userid = u.id left join calendars_proposals c on c.proposalid = p.id where p.active and u.active and (calendarid is not null or allcalendars) order by name, fullname`);
+        const result = await pgdb.query(SQL`select p.*, u.fullname from proposals p join users u on p.userid = u.id left join calendars_proposals c on c.proposalid = p.id where p.active and u.active and (calendarid is not null or allcalendars) order by title, fullname`);
         return result.rows;
     },
     async listVenues(id) {
@@ -91,22 +91,23 @@ export const calendarsDB = {
         return result.rows;
     },
     async listShows(id) {
-        const result = await pgdb.query(SQL`select s.* from shows s where s.calendarid = ${id} and s.active`);
+        const result = await pgdb.query(SQL`select s.*, p.title from shows s join proposals p on s.proposalid = p.id where s.calendarid = ${id} and s.active and p.active`);
         return result.rows;
     },
     async addShow(id, q) {
-        return await pgdb.add('shows', q, SQL`insert into shows (calendarid, proposalid, isinstallation, isgroup, groupshowid, venueid, dateonly, starttime, endtime) values (${id}, ${q.proposalid}, ${!!q.isinstallation}, ${!!q.isgroup}, ${q.groupshowid ?? null}, ${q.venueid ?? null}, ${q.dateonly ?? null}, ${q.starttime ?? null}, ${q.endtime ?? null}) returning *`);
+        return await pgdb.add('shows', q, SQL`insert into shows (calendarid, proposalid, isinstallation, isgroup, groupshowid, venueid, dateonly, starttime, endtime) values (${id}, ${q.proposalid}, ${!!q.isinstallation}, ${!!q.isgroup}, ${q.groupshowid || null}, ${q.venueid || null}, ${q.dateonly || null}, ${q.starttime || null}, ${q.endtime || null}) returning *`);
     },
     async updateShow(id, q) {
         const query = SQL`update shows set updated=now()`;
-        if ('active' in q) query.append(SQL` active=${!!q.active}`);
-        if ('iscancelled' in q) query.append(SQL` iscancelled=${!!q.iscancelled}`);
-        if ('isinstallation' in q) query.append(SQL` isinstallation=${!!q.isinstallation}`);
-        if ('isgroup' in q) query.append(SQL` isgroup=${!!q.isgroup}`);
-        if ('groupshowid' in q) query.append(SQL` groupshowid=${q.groupshowid}`);
-        if ('dateonly' in q) query.append(SQL` venueid=${q.dateonly}`);
-        if ('starttime' in q) query.append(SQL` venueid=${q.starttime}`);
-        if ('endtime' in q) query.append(SQL` venueid=${q.endtime}`);
+        if ('active' in q) query.append(SQL`, active=${!!q.active}`);
+        if ('iscancelled' in q) query.append(SQL`, iscancelled=${!!q.iscancelled}`);
+        if ('isinstallation' in q) query.append(SQL`, isinstallation=${!!q.isinstallation}`);
+        if ('isgroup' in q) query.append(SQL`, isgroup=${!!q.isgroup}`);
+        if ('groupshowid' in q) query.append(SQL`, groupshowid=${q.groupshowid || null}`);
+        if ('venueid' in q) query.append(SQL`, venueid=${q.venueid || null}`);
+        if ('dateonly' in q) query.append(SQL`, dateonly=${q.dateonly || null}`);
+        if ('starttime' in q) query.append(SQL`, starttime=${q.starttime || null}`);
+        if ('endtime' in q) query.append(SQL`, endtime=${q.endtime || null}`);
         query.append(SQL` where id=${id} returning *`);
         return await pgdb.update('calendars', id, q, query);
     },

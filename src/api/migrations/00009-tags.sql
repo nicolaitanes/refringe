@@ -5,7 +5,7 @@ create table tags (
     emoji text not null,
     description text,
     is_visible_to_public bool not null default false,
-    created_by_userid uuid not null references users(id)
+    created_by_userid uuid null references users(id)
 );
 
 create table tags_proposals (

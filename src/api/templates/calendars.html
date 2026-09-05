@@ -62,6 +62,7 @@
         <b>Deadline: [[ cal.deadline ]]</b>
       </div>
       <button @click="editCalendar(cal)">Edit</button>
+      <a :href="cal.id" title="Schedule Shows">Schedule Shows</a>
     </div>
   </template>
   <button @click="addCalendar()">+ New Event</button>

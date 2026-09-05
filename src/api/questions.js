@@ -75,13 +75,13 @@ export const questionsDB = {
     async addOrUpdateAnswer(q) {
         if (!q.questionid) return;
         if (q.proposalid) {
-            await pgdb.upsert('proposalanswers', q, SQL`insert into proposalanswers (questionid, proposalid, answer) values (${q.questionid}, ${q.proposalid}, ${q.answer || null})
+            await pgdb.upsert('proposalanswers', q, SQL`insert into proposalanswers (questionid, proposalid, answer) values (${q.questionid}, ${q.proposalid}, ${q.answer || ''})
                 on conflict (questionid, proposalid) do update set answer = excluded.answer`);
         } else if (q.userid) {
-            await pgdb.upsert('useranswers', q, SQL`insert into useranswers (questionid, userid, answer) values (${q.questionid}, ${q.userid}, ${q.answer || null})
+            await pgdb.upsert('useranswers', q, SQL`insert into useranswers (questionid, userid, answer) values (${q.questionid}, ${q.userid}, ${q.answer || ''})
                 on conflict (questionid, userid) do update set answer = excluded.answer`);
         } else if (q.venueid) {
-            await pgdb.upsert('venueanswers', q, SQL`insert into venueanswers (questionid, venueid, answer) values (${q.questionid}, ${q.venueid}, ${q.answer || null})
+            await pgdb.upsert('venueanswers', q, SQL`insert into venueanswers (questionid, venueid, answer) values (${q.questionid}, ${q.venueid}, ${q.answer || ''})
                 on conflict (questionid, venueid) do update set answer = excluded.answer`);
         }
     }

@@ -1,2 +1,941 @@
-<!-- TODO fullcalendar and show entry controls -->
+{{> header title="Scheduler" sitename=sitename opengraph=opengraph }}
 
+<script src="/js/fullcalendar/index.global.min.js"></script>
+
+<style>
+#divMain {
+    display: grid;
+    grid-template-columns: 0.618fr 1.618fr;
+    grid-template-rows: auto 1.618fr 0.618fr;
+    gap: 1em;
+    height: 100vh;
+}
+h1 {
+    margin: .25em 0;
+}
+.panel {
+    background: #f8f8f8;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px #0001;
+    padding: 1em;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.scroll-list {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.scroll-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5em 0.25em;
+    border-bottom: 1px solid #eee;
+    white-space: nowrap;
+}
+.scroll-list .title {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 0.5em;
+}
+.scroll-list button {
+    flex: 0 0 auto;
+    margin-left: 0.5em;
+}
+.fc-toolbar-chunk:last-of-type {
+    display: none;
+}
+#calendar {
+    flex: 1 1 auto;
+    max-height: 65vh;
+}
+.tag-chips {
+    padding: .1em;
+}
+.tag-chip {
+    margin: .2em;
+    padding: .2em;
+    border: .1em solid gray;
+    border-radius: .62em;
+}
+.fc-timegrid-slots {
+    margin-bottom: 3em;
+}
+@media (max-width: 500px) {
+    #divMain, button {
+        font-size: .62rem;
+    }
+    #divDetails {
+        font-size: .78rem;
+    }
+}
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+</style>
+
+<div id="divMain" class="ma1 calendar-edit">
+    <div class="header" style="grid-column: 1 / 3; grid-row: 1; width: 100%; position: relative;">
+        <div v-if="currentCalendar" style="text-align: center; color: #666; margin-top: -0.5em;">
+            Working on: <strong>[[ currentCalendar.name ]]</strong>
+            <a href="/calendars/" style="margin-left: 1em; font-size: 0.9em;">[Switch Calendar]</a>
+        </div>
+        <!-- Global notes button -->
+        <div style="position: absolute; top: 1rem; right: 1rem;">
+            <notes-button title="Global Notes"></notes-button>
+        </div>
+    </div>
+    <div class="panel" style="grid-row: 2 / 3; grid-column: 1 / 2;">
+        <h3>Proposals <span v-if="loading.proposals" style="color: #666; font-size: 0.8em;">(Loading...)</span></h3>
+        <label>
+            <input type="checkbox" id="toggleOrphans" v-model="showOrphans" :disabled="loading.proposals">
+            Unscheduled
+        </label>
+        <ul class="scroll-list">
+            <template v-for="proposal in filteredProposals" :key="proposal.id">
+                <li>
+                    <span class="title" :title="proposal?.title + ' (' + proposal?.fullname + ')'">
+                        [[ proposal?.title ]] ([[ proposal?.fullname ]])
+                    </span>
+                    <button @click="selectProposal(proposal.id)" :disabled="loading.proposals">✏️</button>
+                </li>
+            </template>
+        </ul>
+    </div>
+    <div class="panel" style="grid-row: 3 / 4; grid-column: 1 / 2;">
+        <h3>Shows <span v-if="loading.shows" style="color: #666; font-size: 0.8em;">(Loading...)</span></h3>
+        <div style="display: flex; justify-content: space-around">
+            <label>
+                <input type="checkbox" id="toggleUndatedShows" v-model="showUndated" :disabled="loading.shows">
+                Unscheduled
+            </label>
+            <label>
+                <input type="checkbox" id="toggleGroupShows" v-model="showGroup" :disabled="loading.shows">
+                Group
+            </label>
+        </div>
+        <ul class="scroll-list">
+            <template v-for="show in filteredShows" :key="show.id">
+                <li>
+                    <span class="title" style="display: flex; gap: .25em" :title="(show.title || show.id) + (show.dateonly ? formatDate(show.dateonly) : '') + (show.starttime ? formatTime(show.starttime) : '') + (show.endtime ? ('-' + formatTime(show.endtime)) : '')">
+                    <span v-if="!show.venueid" title="Missing Venue">⚠️</span>
+                    <span v-if="show.isgroup" title="Group Show">🧑‍🤝‍🧑</span>
+                    [[ show.title || show.id ]]<span v-if="show.dateonly"> [[ formatDate(show.dateonly) ]]</span><span v-if="show.starttime"> [[ formatTime(show.starttime) ]]</span><span v-if="show.endtime">- [[ formatTime(show.endtime) ]]</span>
+                    </span>
+                    <button @click="selectShow(show.id)" :disabled="loading.shows">✏️</button>
+                </li>
+            </template>
+        </ul>
+    </div>
+    <div class="panel" style="grid-row: 2 / 3; grid-column: 2 / 3;">
+        <div style="margin-bottom: 1em; display: flex; gap: 1em; align-items: center; flex-wrap: wrap;">
+            <label>Venue:
+                <select v-model="venueFilter" :disabled="loading.venues">
+                    <option value="">All Venues</option>
+                    <option v-for="venue in venues" :value="venue.id">[[ venue.name ]]</option>
+                </select>
+                <span v-if="loading.venues" style="color: #666; font-size: 0.8em; margin-left: 0.5em;">(Loading...)</span>
+                <button @click="previewvenue">👁️</button>
+            </label>
+            <label>Tag:
+                <select v-model="tagFilter" :disabled="loading.tags">
+                    <option value="">All Tags</option>
+                    <option v-for="tag in visibleTags" :value="tag.id">[[ formatTagDisplay(tag) ]]</option>
+                </select>
+                <span v-if="loading.tags" style="color: #666; font-size: 0.8em; margin-left: 0.5em;">(Loading...)</span>
+                <button v-if="visibleTags.find(t => t.id === tagFilter)?.is_visible_to_public" @click="previewtag">👁️</button>
+            </label>
+            <label>Filter:
+                <input type="text" v-model="freeFilter" placeholder="Type to filter..." style="min-width: 10em;">
+            </label>
+        </div>
+        <div id="calendar"></div>
+    </div>
+    <div class="panel" style="grid-row: 3 / 4; grid-column: 2 / 3;">
+        <div id="divDetails" style="overflow-y: auto">
+            <template v-if="selectedShow">
+                <show-details 
+                    :show="getShow(selectedShow)" 
+                    :proposal="getProposal(getShow(selectedShow)?.proposalid)" 
+                    :groupshows="groupShows" 
+                    :linkedshows="getLinkedShows(selectedShow)"
+                    :venues="venues"
+                    @selectproposal="selectProposal" 
+                    @updateshow="updateshow" 
+                    @deleteshow="deleteshow" 
+                    @selectshow="selectShow"
+                ></show-details>
+            </template>
+            <template v-else-if="selectedProposal">
+                <proposal-details :calendarid="currentCalendarID" :proposal="selectedProposalObject" :shows="getProposalShows(selectedProposal)" :gr="groupShows" @selectshow="selectShow" @addshow="addshow"></proposal-details>
+            </template>
+            <template v-else>
+                <!-- Blank when nothing selected -->
+            </template>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { createApp } from 'vue';
+    import NotesButton from 'notesButton';
+    import NotesOverlay from 'notesOverlay';
+    import { useTags } from 'useTags';
+    import TagChip from 'tagChip';
+
+    let startDate = '2026-04-14';
+    let endDate = '2026-04-17';
+
+    // Vue components for ShowDetails and ProposalDetails
+    const ShowDetails = {
+        components: {
+            NotesButton,
+            TagChip
+        },
+        delimiters: ['[[', ']]'],
+        props: ['show', 'proposal', 'groupshows', 'linkedshows', 'venues'],
+        emits: ['selectproposal', 'updateshow', 'deleteshow'],
+        data() {
+            return {
+                edit: { ...this.show },
+                confirmDelete: false
+            }
+        },
+        watch: {
+            show: {
+                handler(newVal) {
+                    this.edit = { ...newVal };
+                },
+                deep: true
+            }
+        },
+        methods: {
+            previewProposal() {
+                // TODO
+                // window.open(`/TEST/Calendar/Admin/?id=${this.show.Calendar_ID}&proposal=${this.show.Proposal_details_ID}`, '_blank');
+            },
+            selectProposal() {
+                this.$emit('selectproposal', this.show.proposalid);
+            },
+            editProposal() {
+                open('/proposals/' + this.proposal.id, '_blank');
+            },
+            update() {
+                if (this.edit.groupshowid && this.edit.groupshowid !== this.show.groupshowid) {
+                    const gs = this.groupshows.find(s => s.id === this.edit.groupshowid);
+                    this.edit.dateonly = gs?.dateonly || this.edit.dateonly;
+                    this.edit.starttime ||= gs?.starttime;
+                    this.edit.endtime ||= gs?.endtime;
+                    this.edit.venueid = gs?.venueid || this.edit.venueid;
+                }
+                this.$emit('updateshow', this.edit);
+            },
+            deleteshow() {
+                if (!this.confirmDelete) {
+                    this.confirmDelete = true;
+                    return;
+                }
+                this.$emit('deleteshow', this.show.id);
+            },
+            formatDate(dateString) {
+                if (!dateString) return '';
+                const date = new Date(dateString + 'T00:00:00');
+                return `${date.getMonth() + 1}/${date.getDate()}`;
+            },
+            formatTime(timeString) {
+                if (!timeString) return '';
+                const [hours, minutes] = timeString.split(':');
+                const date = new Date();
+                date.setHours(parseInt(hours), parseInt(minutes));
+                return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            },
+        },
+        computed: {
+            isInstallation() {
+                return !!this.edit.isinstallation;
+            },
+            isGroup() {
+                return !!this.edit.isgroup;
+            }
+        },
+        template: `
+            <div v-if="proposal?.id">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <a href="#" @click.prevent="editProposal">
+                            [[ proposal.title ]] ([[ proposal.fullname ]])
+                        </a>
+                        <button @click="selectProposal">✏️</button>
+                        <button @click="previewProposal">👁️</button>
+                    </div>
+                    <notes-button :proposalid="proposal.id" :showid="show?.id" size="small"></notes-button>
+                </div>
+                <div style="margin: 8px 0;">
+                    <tag-chip entity-type="show" :entityid="edit.id" class-name="show-tags"></tag-chip>
+                </div>
+                <div>
+                    <label><input type="checkbox" v-model="edit.isinstallation"> Installation</label>
+                    <label><input type="checkbox" v-model="edit.isgroup"> Group Show</label>
+                </div>
+                <div>
+                    <span v-if="!edit.groupshowid">
+                        <label>Date: <input type="date" v-model="edit.dateonly"></label>
+                    </span>
+                    <label>Start: <input type="time" v-model="edit.starttime"></label>
+                    <label>End: <input type="time" v-model="edit.endtime"></label>
+                </div>
+                <div v-if="!edit.isgroup">
+                    <label style="display: flex; align-items: center;">
+                        Group Show:
+                        <select v-model="edit.groupshowid" style="margin-left: 0.5em;">
+                            <option value="">None</option>
+                            <option v-for="gs in groupshows" :value="gs.id">[[ gs.dateonly.slice(5) ]] [[ gs.title || gs.id ]]</option>
+                        </select>
+                        <button 
+                            style="margin-left: 0.5em;"
+                            :disabled="!edit.groupshowid"
+                            @click="$emit('selectshow', edit.groupshowid)">
+                            ✏️
+                        </button>
+                    </label>
+                </div>
+                <div v-if="!edit.groupshowid">
+                    <label>Venue:
+                        <select v-model="edit.venueid">
+                            <option value="">Select Venue</option>
+                            <option v-for="venue in venues" :value="venue.id">[[ venue.name ]]</option>
+                        </select>
+                    </label>
+                </div>
+                <div>
+                    <button @click="update">Update</button>
+                    <button @click="deleteshow">Delete</button>
+                    <span v-if="confirmDelete" style="color:red">Click again to confirm delete</span>
+                </div>
+                <div v-if="show?.isgroup && linkedshows.length">
+                    <h4>Linked Shows</h4>
+                    <ul class="scroll-list">
+                        <li v-for="ls in linkedshows" :key="ls.id">
+                            <span class="title" style="display: flex; gap: .25em" >[[ ls.title || ls.id ]]<span v-if="ls.dateonly"> [[ formatDate(ls.dateonly) ]]</span><span v-if="ls.starttime"> [[ formatTime(ls.starttime) ]]</span><span v-if="ls.endtime">-[[ formatTime(ls.endtime) ]]</span></span>
+                            <button @click="$emit('selectshow', ls.id)">✏️</button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        `
+    };
+
+    const ProposalDetails = {
+        components: {
+            NotesButton,
+            TagChip,
+        },
+        delimiters: ['[[', ']]'],
+        props: ['calendarid', 'proposal', 'shows', 'groupshows'],
+        emits: ['selectshow', 'addshow'],
+        data() {
+            return {
+                newShow: {
+                    isgroup: false,
+                    isinstallation: false,
+                    date: startDate,
+                    start: '',
+                    end: '',
+                    groupshowid: ''
+                }
+            }
+        },
+        methods: {
+            selectshow(id) {
+                this.$emit('selectshow', id);
+            },
+            editProposal() {
+                if (!this.proposal) return;
+                open('/proposals/' + this.proposal.id, '_blank');
+            },
+            previewProposal() {
+                // TODO
+                // window.open(`/TEST/Calendar/Admin/?id=${this.calendarid}&proposal=${this.proposal.id}`, '_blank');
+            },
+            add() {
+                const showData = {
+                    ...this.newShow,
+                    proposalid: this.proposal.id
+                };
+                this.$emit('addshow', showData);
+            },
+            formatDate(dateString) {
+                if (!dateString) return '';
+                const date = new Date(dateString + 'T00:00:00');
+                return `${date.getMonth() + 1}/${date.getDate()}`;
+            },
+            formatTime(timeString) {
+                if (!timeString) return '';
+                const [hours, minutes] = timeString.split(':');
+                const date = new Date();
+                date.setHours(parseInt(hours), parseInt(minutes));
+                return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            },
+        },
+        template: `
+            <div v-if="proposal?.id">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <a href="#" @click.prevent="editProposal">
+                            [[ proposal.title ]] ([[ proposal.fullname ]])
+                        </a>
+                    </div>
+                    <button @click="previewProposal">👁️</button>
+                    <notes-button :proposalid="proposal.id" size="small"></notes-button>
+                </div>
+                <div style="margin: 8px 0;">
+                    <tag-chip entity-type="proposal" :entityid="proposal.id" class-name="proposal-tags"></tag-chip>
+                </div>
+                <div>
+                    <ul class="scroll-list">
+                        <li v-for="show in shows" :key="show.id">
+                            <span class="title" style="display: flex; gap: .25em">
+                                <span v-if="show.dateonly"> [[ formatDate(show.dateonly) ]]</span>
+                                <span v-if="show.starttime"> [[ formatTime(show.starttime) ]]</span>
+                                <span v-if="show.endtime">- [[ formatTime(show.endtime) ]]</span>
+                            </span>
+                            <button @click="selectshow(show.id)">✏️</button>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Add Event</h4>
+                    <label><input type="checkbox" v-model="newShow.isgroup"> Group Show</label>
+                    <label><input type="checkbox" v-model="newShow.isinstallation"> Installation</label>
+                    <div v-if="!newShow.isinstallation ">
+                        <label>Date: <input type="date" v-model="newShow.dateonly"></label>
+                        <label>Start: <input type="time" v-model="newShow.starttime"></label>
+                        <label>End: <input type="time" v-model="newShow.endtime"></label>
+                    </div>
+                    <button @click="add">Add</button>
+                </div>
+            </div>
+        `
+    };
+
+    async function makeApiCall(fullpath, params=null, method='GET') {
+        const headers = {
+            Accept: 'application/json',
+            'Content-Type': 'application/json'
+        };
+        const response = await (method === 'GET'
+             ? fetch(fullpath, { method, headers, params })
+             : fetch(fullpath, { method, headers, body: JSON.stringify(params) })
+        );
+        if (response.status === 204) return;
+        if (response.status === 200) return await response.json();
+        const errBody = await response.text();
+        const err = new Error('Request Failed');
+        try {
+            err.details = JSON.parse(errBody);
+        } catch (e) {
+            err.details = errBody;
+        }
+        throw err;
+    }
+  
+    const ScheduleApp = {
+        components: {
+            ShowDetails,
+            ProposalDetails,
+            NotesButton,
+            NotesOverlay,
+            TagChip
+        },
+        delimiters: ['[[', ']]'],
+        setup() {
+            const {
+                tags,
+                activeTags,
+                loading: tagLoading,
+                loadTags,
+                formatTagDisplay,
+                getTagsForProposal,
+                getTagsForShow,
+                setTagFilter,
+                clearTagFilter,
+                activeTagFilter
+            } = useTags();
+            
+            return {
+                tags,
+                visibleTags: tags,
+                tagLoading,
+                loadTags,
+                formatTagDisplay,
+                getTagsForProposal,
+                getTagsForShow,
+                setTagFilter,
+                clearTagFilter,
+                activeTagFilter
+            };
+        },
+        data() {
+            return {
+                currentCalendarID: null,
+                currentCalendar: null,
+                calendar: null,
+                proposals: [],
+                showOrphans: false,
+                selectedProposal: null,
+                shows: [],
+                showGroup: false,
+                showUndated: false,
+                selectedShow: null,
+                venues: [],
+                venueFilter: '',
+                tagFilter: '',
+                freeFilter: '',
+                // Store show tags for filtering
+                showTags: {}, // showId -> array of tags
+                proposalTags: {},
+                // Add loading states
+                loading: {
+                    proposals: false,
+                    shows: false,
+                    groupShows: false,
+                    venues: false,
+                    tags: false
+                },
+                // Queue selections until data is loaded
+                pendingSelection: null
+            }
+        },
+        computed: {
+            // Add computed properties for better reactivity
+            isDataLoaded() {
+                return !Object.values(this.loading).some(Boolean);
+            },
+            selectedProposalObject() {
+                return this.selectedProposal ? this.getProposal(this.selectedProposal) : null;
+            },
+            selectedShowObject() {
+                return this.selectedShow ? this.getShow(this.selectedShow) : null;
+            },
+            // Frontend filtering for proposals and shows
+            filteredProposals() {
+                if (!this.showOrphans) {
+                    return this.proposals;
+                }
+                // Show only proposals that have no shows (orphans)
+                return this.proposals.filter(proposal => {
+                    return !this.shows.some(show => show.proposalid === proposal.id);
+                });
+            },
+            filteredShows() {
+                if (!this.showUndated && !this.showGroup) {
+                    return this.shows;
+                }
+                // Show only shows with missing venue, date, start, or end times
+                return this.shows.filter(show => {
+                    if (this.showUndated) {
+                        if (!show.venueid) return true;
+                        if (!show.isinstallation && !(show.dateonly && show.starttime && show.endtime)) return true;
+                    }
+                    if (this.showGroup && show.isgroup) return true;
+                    return false;
+                });
+            },
+            groupShows() {
+                return this.shows.filter(s => s.isgroup);
+            }
+        },
+        watch: {
+            // Watch for data loading completion to apply pending selections
+            'loading.proposals'(isLoading) {
+                if (!isLoading && this.pendingSelection?.type === 'proposal') {
+                    this.selectedProposal = this.pendingSelection.id;
+                    this.pendingSelection = null;
+                }
+            },
+            'loading.shows'(isLoading) {
+                if (!isLoading && this.pendingSelection?.type === 'show') {
+                    this.selectedShow = this.pendingSelection.id;
+                    this.pendingSelection = null;
+                }
+            },
+            // Refresh calendar when shows data changes
+            shows: {
+                handler() {
+                    this.$nextTick(() => {
+                        if (this.calendar) {
+                            this.calendar.refetchEvents();
+                        }
+                    });
+                },
+                deep: true
+            },
+            tagFilter() {
+                this.setTagFilter(this.tagFilter || null); 
+                this.$nextTick(() => {
+                    if (this.calendar) {
+                        this.calendar.refetchEvents();
+                    }
+                });
+            },
+            venueFilter() {
+                this.$nextTick(() => {
+                    if (this.calendar) {
+                        this.calendar.refetchEvents();
+                    }
+                });
+            },
+            freeFilter() {
+                this.$nextTick(() => {
+                    if (this.calendar) {
+                        this.calendar.refetchEvents();
+                    }
+                });
+            },
+            selectedShow() {
+                this.$nextTick(() => {
+                    if (this.calendar) {
+                        this.calendar.refetchEvents();
+                    }
+                });
+            },
+        },
+        mounted() {
+            // Get calendar ID from final URL segment
+            const urlParams = new URLSearchParams(window.location.search);
+            this.currentCalendarID = window.location.pathname.split('/').at(-1);
+            
+            // Load all data concurrently and handle fragment restoration after
+            Promise.all([
+                this.loadCurrentCalendar(),
+                this.loadProposals(),
+                this.loadShows(),
+                this.loadVenues(),
+                this.loadTags(),
+            ]).then(() => this.loadShowTags())
+            .then(() => this.loadProposalTags())
+              .then(() => {
+                this.restoreSelectionFromFragment();
+            });
+            
+            // Listen for tag filter changes from TagLink components
+            window.addEventListener('tagFilterChanged', (event) => {
+                this.tagFilter = event.detail.tagId || '';
+            });
+            
+            window.addEventListener('hashchange', this.restoreSelectionFromFragment);
+        },
+        methods: {
+            async loadCurrentCalendar() {
+                if (!this.currentCalendarID) {
+                    // If no calendar specified, redirect to calendar management
+                    window.location.href = '/calendars';
+                    return;
+                }
+                
+                try {
+                    const data = await makeApiCall('/calendars/'+this.currentCalendarID);
+                    if (data && data.id) {
+                        this.currentCalendar = data;
+                        startDate = data.startdate;
+                        endDate = data.enddate;
+                        this.initializeCalendar();
+                    } else {
+                        // Calendar not found, redirect to calendar management
+                        alert('Calendar not found');
+                        window.location.href = '/calendars';
+                    }
+                } catch (error) {
+                    console.error('Error loading calendar:', error);
+                    alert('Error loading calendar');
+                    window.location.href = '/calendars';
+                }
+            },
+            initializeCalendar() {
+                const d0 = new Date(Date.parse(startDate + 'T00:00:00'));
+                const pastEndDate = new Date(Date.parse(endDate + 'T00:00:00'));
+                pastEndDate.setDate(pastEndDate.getDate() + 1);
+                this.calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+                    initialView: 'timeGrid',
+                    views: {
+                        timeGrid: {
+                            type: 'timeGrid',
+                            duration: { days: ((pastEndDate - d0) / (24 * 60 * 60 * 1000)) | 0 },
+                            slotMinTime: '00:00:00', // Optional: earliest time shown
+                            slotMaxTime: '23:59:59'  // Optional: latest time shown
+                        }
+                    },
+                    validRange: {
+                        start: d0,
+                        end: pastEndDate,
+                    },
+                    events: (info, successCallback, failureCallback) => {
+                        // Filter shows for calendar display
+                        const filtered = this.shows.filter(show => {
+                            // Must have date, start, end
+                            if (!show.dateonly || !show.starttime || !show.endtime) return false;
+                            // Omit if assigned to a group show
+                            if (show.groupshowid) return false;
+                            // Venue filter
+                            if (this.venueFilter && show.venueid != this.venueFilter) return false;
+                            // Tag filter
+                            if (this.tagFilter) {
+                                const showTagData = this.showTags[show.id] || [];
+                                const proposalTagData = this.proposalTags[show.proposalid] || [];
+                                if (
+                                    !showTagData.some(tag => tag.id == this.tagFilter)
+                                        && !proposalTagData.some(tag => tag.id == this.tagFilter)
+                                ) return false;
+                            }
+                            // Free filter: match title or proposal title
+                            if (this.freeFilter) {
+                                const text = (show.title || '') + ' ' + (this.getProposal(show.proposalid)?.title || '');
+                                if (!text.toLowerCase().includes(this.freeFilter.toLowerCase())) return false;
+                            }
+                            return true;
+                        });
+                        // Map to FullCalendar event format
+                        const events = filtered.map(show => {
+                            const showTagData = this.showTags[show.id] || [];
+                            const proposalTagData = this.proposalTags[show.proposalid] || [];
+                            const isSelected = show.id == this.selectedShow;
+                            const proposal = this.getProposal(show.proposalid);
+                            const title = show.title || proposal?.title || 'Show';
+                            const emoji = [...new Set([...showTagData.map(t => [...(t.emoji ?? '')]), ...proposalTagData.map(t => [...(t.emoji ?? '')])]
+                                                      .flat().filter(Boolean))].join('');
+                            return {
+                                id: show.id,
+                                title: emoji ? `${emoji} ${title}` : title,
+                                start: show.dateonly + 'T' + show.starttime,
+                                end: show.dateonly + 'T' + show.endtime,
+                                backgroundColor: isSelected ? '#007cba' : '#3788d8',
+                                borderColor: isSelected ? '#005a87' : '#1976d2',
+                                textColor: '#ffffff',
+                                extendedProps: show
+                            };
+                        });
+                        successCallback(events);
+                    },
+                    eventClick: (info) => {
+                        // Select show for divDetails
+                        this.selectShow(info.event.id);
+                    }
+                });
+                this.calendar.render();
+            },
+            async loadProposals() {
+                this.loading.proposals = true;
+                try {
+                    const data = await makeApiCall('/calendars/'+this.currentCalendarID+'/proposals/');
+                    this.proposals = Array.isArray(data?.proposals) ? data.proposals : [];
+                } catch (error) {
+                    console.error('Error loading proposals:', error);
+                    this.proposals = [];
+                } finally {
+                    this.loading.proposals = false;
+                }
+            },
+            async loadShows() {
+                this.loading.shows = true;
+                try {
+                    const data = await makeApiCall('/calendars/'+this.currentCalendarID+'/shows/');
+                    this.shows = Array.isArray(data?.shows) ? data.shows : [];
+                } catch (error) {
+                    console.error('Error loading shows:', error);
+                    this.shows = [];
+                } finally {
+                    this.loading.shows = false;
+                }
+            },
+            selectProposal(id) {
+                if (this.loading.proposals) {
+                    this.pendingSelection = { type: 'proposal', id };
+                    return;
+                }
+                this.selectedProposal = id;
+                this.selectedShow = null;
+                this.updateFragment();
+            },
+            selectShow(id) {
+                if (this.loading.shows) {
+                    this.pendingSelection = { type: 'show', id };
+                    return;
+                }
+                this.selectedShow = id;
+                this.selectedProposal = null;
+                this.updateFragment();
+            },
+            updateFragment() {
+                // Use a structured fragment for extensibility
+                let frag = [];
+                if (this.selectedShow) frag.push('show=' + encodeURIComponent(this.selectedShow));
+                if (this.selectedProposal) frag.push('proposal=' + encodeURIComponent(this.selectedProposal));
+                if (this.venueFilter) frag.push('venue=' + encodeURIComponent(this.venueFilter));
+                if (this.tagFilter) frag.push('tag=' + encodeURIComponent(this.tagFilter));
+                if (this.freeFilter) frag.push('filter=' + encodeURIComponent(this.freeFilter));
+                window.location.hash = frag.join('&');
+            },
+            restoreSelectionFromFragment() {
+                if (!this.isDataLoaded) {
+                    // Data not ready, will be called again by watchers
+                    return;
+                }
+                
+                const hash = window.location.hash.replace(/^#/, '');
+                const params = {};
+                hash.split('&').forEach(pair => {
+                    const [k, v] = pair.split('=');
+                    if (k && v) params[k] = decodeURIComponent(v);
+                });
+                if (params.show) {
+                    this.selectedShow = +params.show;
+                    this.selectedProposal = null;
+                } else if (params.proposal) {
+                    this.selectedProposal = +params.proposal;
+                    this.selectedShow = null;
+                }
+                if (params.venue) {
+                    this.venueFilter = params.venue;
+                }
+                if (params.tag) {
+                    this.tagFilter = params.tag;
+                }
+                if (params.filter) {
+                    this.freeFilter = params.filter;
+                }
+            },
+            async loadVenues() {
+                this.loading.venues = true;
+                try {
+                    const data = await makeApiCall('/calendars/'+this.currentCalendarID+'/venues/');
+                    this.venues = Array.isArray(data?.venues) ? data.venues : [];
+                    this.venues = this.venues.filter(v => v.id);
+                } catch (error) {
+                    console.error('Error loading venues:', error);
+                    this.venues = [];
+                } finally {
+                    this.loading.venues = false;
+                }
+            },
+            getProposal(id) {
+                return this.proposals.find(p => p.id === id);
+            },
+            getShow(id) {
+                return this.shows.find(s => s.id === id);
+            },
+            getProposalShows(proposalID) {
+                return this.shows.filter(s => s.proposalid === proposalID);
+            },
+            getLinkedShows(showID) {
+                const show = this.getShow(showID);
+                if (!show || !show.isgroup) return [];
+                return this.shows.filter(s => s.groupshowid === showID);
+            },
+            formatDate(dateString) {
+                if (!dateString) return '';
+                const date = new Date(dateString + 'T00:00:00');
+                return `${date.getMonth() + 1}/${date.getDate()}`;
+            },
+            formatTime(timeString) {
+                if (!timeString) return '';
+                const [hours, minutes] = timeString.split(':');
+                const date = new Date();
+                date.setHours(parseInt(hours), parseInt(minutes));
+                return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            },
+            updateshow(showData) {
+                makeApiCall('/calendars/'+this.currentCalendarID+'/shows/'+showData.id, showData, 'PUT')
+                .then(() => {
+                    this.loadShows();
+                    this.loadProposals();
+                });
+            },
+            deleteshow(showID) {
+                makeApiCall('/calendars/'+this.currentCalendarID+'/shows/'+showData.id, { active: false }, 'PUT')
+                .then(() => {
+                    this.loadShows();
+                    this.loadProposals();
+                });
+            },
+            addshow(showData) {
+                // Add current calendar ID to show data
+                showData.calendarid = this.currentCalendarID;
+
+                makeApiCall('/calendars/'+this.currentCalendarID+'/shows/', showData, 'POST')
+                .then(data => {
+                    this.loadShows();
+                    this.loadProposals();
+                    if (data && data.id) {
+                        this.selectShow(data.id);
+                    }
+                });
+            },
+            previewtag() {
+                const tag = this.visibleTags.find(t => t.id === this.tagFilter);
+                // TODO
+                // window.open(`/TEST/Calendar/Admin/?id=${this.currentCalendarID}&tag=${tag.name}`, '_blank');
+            },
+            previewvenue() {
+                if (this.venueFilter) {
+                    const venue = this.venues.find(v => v.id === this.venueFilter);
+                    // TODO
+                    // window.open(`/TEST/Calendar/Admin/?id=${this.currentCalendarID}&venue=${venue.id}`, '_blank');
+                } else {
+                    // TODO
+                    // window.open(`/TEST/Calendar/Admin/?id=${this.currentCalendarID}`, '_blank');
+                }
+            },
+            // Load proposal tags for filtering
+            async loadProposalTags() {
+                this.loading.tags = true;
+                try {
+                    // Load tags for all proposals
+                    const tags = await this.getTagsForProposal();
+                    
+                    // Build proposalTags object
+                    this.proposalTags = {};
+                    tags.forEach(tag => {
+                        (this.proposalTags[tag.proposalid] ||= []).push(tag);
+                    });
+                } catch (error) {
+                    console.error('Error loading proposal tags:', error);
+                    this.proposalTags = {};
+                } finally {
+                    this.loading.tags = false;
+                }
+            },
+            // Load show tags for filtering
+            async loadShowTags() {
+                this.loading.tags = true;
+                try {
+                    // Load tags for all shows
+                    const tags = await this.getTagsForShow();
+                    
+                    // Build showTags object
+                    this.showTags = {};
+                    tags.forEach(tag => {
+                        (this.showTags[tag.showid] ||= []).push(tag);
+                    });
+                } catch (error) {
+                    console.error('Error loading show tags:', error);
+                    this.showTags = {};
+                } finally {
+                    this.loading.tags = false;
+                }
+            }
+        }
+    };
+
+      createApp(ScheduleApp).mount('#divMain');
+</script>

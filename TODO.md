@@ -2,7 +2,6 @@
 
 ## Features
 
-- [ ] calendar-edit (fullcalendar and shows, adapt from old project)
 - [ ] schedule (by day/venue/..., adapt from old project)
 - [ ] venue map (adapt from old project)
 - [ ] iframeable monthly fullcalendar, in seeded / and /cur-events/
@@ -24,6 +23,7 @@
 - [ ] capture venue lat/long on map
 - [ ] better breadcrumbs
 - [ ] links from calendar-detail
+- [ ] All Proposals including inactive ones
 - [ ] sortable tables/lists
 - [ ] filterable tables/lists
 - [ ] csv export of proposals/users/venues with q/a, tags, notes
