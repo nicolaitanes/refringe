@@ -16,19 +16,23 @@
 
 ## Improvements
 
+- [ ] calendar-edit layout and dark mode
 - [ ] clean up date/time formatting
 - [ ] cancelled shows
     - [ ] by calendars_proposals.status
-    - [ ] by flag on show
+    - [ ] by show.iscancelled
+- [ ] callforwork text/links in user, public templates (iframeable for pages?)
 - [ ] capture venue lat/long on map
 - [ ] better breadcrumbs
 - [ ] links from calendar-detail
-- [ ] All Proposals including inactive ones
+- [ ] proposal/venue calendars status: choices / editing / filtering
+- [ ] All Proposals: include inactive ones
 - [ ] sortable tables/lists
 - [ ] filterable tables/lists
 - [ ] csv export of proposals/users/venues with q/a, tags, notes
 - [ ] combine user2 into user1 (set user1.id on proposals/venues/... and deactivate user2)
-- [ ] content security policy
+    - [ ] admin/organizer select user on proposal-edit?
+- [ ] content security policy?
 - [ ] test and improve question editor
      - [ ] try various field types, choices
      - [ ] try followups
@@ -42,4 +46,3 @@
 - [ ] venue visibility to other users?
 - [ ] proposal website link
 - [ ] notes on calendars?
-- [ ] .

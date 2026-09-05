@@ -4,6 +4,7 @@ create table venues (
     active bool not null default true,
     allcalendars bool not null default false,
     name text not null,
+    owner text not null,
     address text not null,
     city text,
     state text,
@@ -12,6 +13,8 @@ create table venues (
     longitude float,
     phone text,
     email text,
+    contactperson text not null,
+    referralphone text not null,
     website text,
     updated timestamptz not null default now()
 );

@@ -100,7 +100,7 @@ docker compose up -d
         - user edit form: GET /users/:id
         - user edit: POST /user/:id (multipart/mime)
 
-4. sub-routers: calendar/, notes/, pages/, proposals/, questions/, tags/, venues/
+4. sub-routers: calendars/, notes/, pages/, proposals/, questions/, tags/, venues/
 
 5. templates.js: renders pages (and fragments) via handlebars, from src/api/templates/
 
