@@ -4,8 +4,10 @@
 <div class="ma1">
     <form class="submitonce" action="/proposals" method="POST" enctype="multipart/form-data">
         <div class="formfields">
-            <label for="title">Title:</label>
+            <label for="title">Proposal Title:</label>
             <input type="text" name="title" id="title" value="{{proposal.title}}">
+            <label for="stagename">Stage Name:</label>
+            <input type="text" name="stagename" id="stagename" value="{{proposal.stagename}}">
 
             {{#each questions}}
                 {{> answer-edit item=this }}

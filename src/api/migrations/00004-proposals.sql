@@ -4,6 +4,7 @@ create table proposals (
     allcalendars bool not null default false,
     userid uuid not null references users(id),
     title text not null,
+    stagename text,
     updated timestamptz not null default now()
 );
 

@@ -23,14 +23,15 @@ export const proposalsDB = {
     },
     async add(q) {
         return await pgdb.add('proposals', q, SQL`insert into proposals (
-            userid, title, allcalendars, active
+            userid, title, stagename, allcalendars, active
         ) values (
-            ${q.userid}, ${q.title?.trim()}, ${!!q.allcalendars}, ${q.active || true}
+            ${q.userid}, ${q.title?.trim()}, ${q.stagename || null}, ${!!q.allcalendars}, ${q.active || true}
         ) returning *`);
     },
     async update(id, q) {
         return await pgdb.update('proposals', id, q, SQL`update proposals set
                 title = ${q.title?.trim()},
+                stagename = ${q.stagename?.trim()},
                 allcalendars = ${!!q.allcalendars},
                 active = ${q.active},
                 updated = now()
@@ -43,6 +44,7 @@ function parseProposal(body) {
     return {
         userid: body.userid ? `${body.userid}` : null,
         title: `${body.title || ''}`,
+        stagename: `${body.stagename || ''}`,
         description: `${body.description || ''}`,
         allcalendars: !!body.allcalendars,
         active: !!body.active
