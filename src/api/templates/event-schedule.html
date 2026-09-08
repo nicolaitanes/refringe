@@ -1,4 +1,4 @@
-{{> header title="calendar.publicname" sitename=sitename opengraph=opengraph }}
+{{> header title=calendar.publicname sitename=sitename opengraph=opengraph }}
 
 <script>
   window.key = `{{ key }}`;
@@ -9,7 +9,7 @@
 
   window.proposals = JSON.parse(`{{{ proposals }}}`);
   window.venues = JSON.parse(`{{{ venues }}}`);
-  window.pubcalendar = JSON.parse(`{{{ publiccalendar }}}`);
+  window.pubcalendar = JSON.parse(`{{{ pubcalendar }}}`);
   window.calendar = JSON.parse(`{{{ calendar }}}`);
   window.shows = JSON.parse(`{{{ shows }}}`);
   window.notes = JSON.parse(`{{{ notes }}}`);
@@ -565,10 +565,10 @@ ul {
         state.noDescription = state.shows.flatMap(s => s.items.flatMap(it => it.grouped?.length ? it.grouped : [it])).length > 30;
 
         const isApple = () => navigator.userAgent.match(/Version\/[\d\.]+.*Safari/);
-        const mapUrl = (v) => '../Map/#venue=' + v.id;
+        const mapUrl = (v) => 'map/#venue=' + v.id;
         /*{
-            if (!v?.lat || !v?.lng) return '';
-            return (isApple() ? 'https://maps.apple.com/?ll=' : 'https://www.google.com/maps?q=') + (v.lat.toFixed(5) + ',' + v.lng.toFixed(5)) +
+            if (!v?.latitude || !v?.longitude) return '';
+            return (isApple() ? 'https://maps.apple.com/?ll=' : 'https://www.google.com/maps?q=') + (v.latitude.toFixed(5) + ',' + v.longitude.toFixed(5)) +
                 (v.name && isApple() ? '&q=' + v.name.replace(/[ &?]/g, '+') : '');
         };*/
 
@@ -649,7 +649,7 @@ ul {
             <summary>Venues</summary>
             <div style="display: flex; justify-content: space-between">
                 <a href="${linkByVenue}">(show full schedule by Venue)</a>
-                <a href="../Map/">🗺️ Venue Map</a>
+                <a href="map/">🗺️ Venue Map</a>
             </div>
             <ul>
                 ${() => state.venues.map(v => html`<li>
@@ -680,11 +680,11 @@ ul {
 </nav>
 <h1>
     <a style="${(proposalid || tagName || venueid || onlyFavorites) ? '' : 'display: none'}" href="${fullQueryBase}">
-        ${pubcalendar?.name || calendar.name}
+        ${pubcalendar?.publicname || calendar.name}
         <span style="${onlyFavorites ? '' : 'display: none'}"> 💛</span>
     </a>
-    <span style="${(proposalid || tagName || venueid || onlyFavorites) ? 'display: none' : ''}">${pubcalendar?.name || calendar.name}</span>
-    <button style="${navigator.share && pubcalendar && !subtitle && !onlyFavorites ? '' : 'display: none'}" class="share" @click="${e => e && navigator.share({ text: pubcalendar?.name, url: document.location.href })}">
+    <span style="${(proposalid || tagName || venueid || onlyFavorites) ? 'display: none' : ''}">${pubcalendar?.publicname || calendar.name}</span>
+    <button style="${navigator.share && pubcalendar && !subtitle && !onlyFavorites ? '' : 'display: none'}" class="share" @click="${e => e && navigator.share({ text: pubcalendar?.publicname, url: document.location.href })}">
         <svg viewBox="0 0 100 100" style="stroke: var(--fg-color); fill: transparent;">
             <circle style="stroke-width: 6" cx="18" cy="50" r="15"></circle>
             <circle style="stroke-width: 6" cx="88" cy="20" r="10"></circle>
@@ -715,7 +715,7 @@ ul {
     </button>
 </h3>
 <div style="display: flex; justify-content: space-around;">
-    <a class="pin" style="${venueid && venuesByid[venueid]?.lat ? '' : 'display: none'}" href="${venueid && mapUrl(venuesByid[venueid]) || ''}" title="View on Map">[📍view on map]</a>
+    <a class="pin" style="${venueid && venuesByid[venueid]?.latitude ? '' : 'display: none'}" href="${venueid && mapUrl(venuesByid[venueid]) || ''}" title="View on Map">[📍view on map]</a>
     <a style="${venueid && venuesByid[venueid]?.url ? '' : 'display: none'}" href="${venuesByid[venueid]?.url}" target="_blank">[visit website]</a>
 </div>
 <p class="subdesc" style="white-space: pre-wrap">${subdesc}</p>

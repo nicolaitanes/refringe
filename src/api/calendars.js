@@ -225,14 +225,14 @@ router.get('/public/:key', async (req, res) => {
 
 router.get('/events/', async (req, res) => {
     // TODO fullcalendar of public calendars and upcoming deadlines; pre-highlight next event
+    //           : (await calendarsDB.list({ active: true, current: true, ispublic: true, limit: 1 }))[0];
+
     const calendar = (await calendarsDB.list({ active: true, current: true, ispublic: true, limit: 1 }))[0];
     res.redirect(303, calendar?.key ? '/calendars/events/' + calendar.key : '/');
 });
 
 router.get('/events/:key', async (req, res) => {
-    const calendar = req.params.key
-          ? await calendarsDB.getPublic(req.params.key)
-          : (await calendarsDB.list({ active: true, current: true, ispublic: true, limit: 1 }))[0];
+    const calendar = await calendarsDB.getPublic(req.params.key);
     if (!calendar) return res.status(404).send('Not Found');
     // TODO short-duration caching
     const [
@@ -258,7 +258,7 @@ router.get('/events/:key', async (req, res) => {
         tagname: req.query.tag || '',
         venueid: req.query.venue || '',
         calendar: { ...calendar, id: calendar.calendarid, publicid: calendar.id },
-        publiccalendar: calendar,
+        pubcalendar: calendar,
         proposals,
         venues,
         shows: shows.filter(s => s.venueid),
@@ -268,6 +268,25 @@ router.get('/events/:key', async (req, res) => {
     }))(req, res);
     // TODO more SSR based on req.query (also `by: 'artist' | 'venue' | 'day')
 });
+
+router.get('/events/:key/map/', async (req, res) => {
+    const calendar = await calendarsDB.getPublic(req.params.key);
+    if (!calendar) return res.status(404).send('Not Found');
+    const [shows, venues] = await Promise.all([
+        calendarsDB.listShows(calendar.calendarid),
+        calendarsDB.listVenues(calendar.calendarid)
+    ]);
+    const presentVenueIDs = new Set(shows.map(s => s.venueid));
+    return renderTemplate(tmplJsonFields({
+        template: 'event-map',
+        key: calendar.key,
+        venueid: req.query.venue || '',
+        calendar: { ...calendar, id: calendar.calendarid, publicid: calendar.id },
+        pubcalendar: calendar,
+        venues: venues.filter(v => presentVenueIDs.has(v.id))
+    }))(req, res);
+});
+    
 
 router.get('/', async (req, res) => {
     const calendars = await calendarsDB.list(req.query);
