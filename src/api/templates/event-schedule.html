@@ -1,0 +1,762 @@
+{{> header title="calendar.publicname" sitename=sitename opengraph=opengraph }}
+
+<script>
+  window.key = `{{ key }}`;
+  window.calendarid = `{{ calendarid }}`;
+  window.proposalid = `{{ proposalid }}`;
+  window.tagName = `{{ tagname }}`;
+  window.venueid = `{{ venueid }}`;
+
+  window.proposals = JSON.parse(`{{{ proposals }}}`);
+  window.venues = JSON.parse(`{{{ venues }}}`);
+  window.pubcalendar = JSON.parse(`{{{ publiccalendar }}}`);
+  window.calendar = JSON.parse(`{{{ calendar }}}`);
+  window.shows = JSON.parse(`{{{ shows }}}`);
+  window.notes = JSON.parse(`{{{ notes }}}`);
+  window.tags = JSON.parse(`{{{ tags }}}`);
+  window.showTags = JSON.parse(`{{{ showTags }}}`);
+</script>
+
+    <style>
+* {
+    box-sizing: border-box;
+}
+body {
+    margin: 0;
+}
+body {
+    --bg-color: white;
+    --fg-color: black;
+    --link-color: rgb(84, 84, 243);
+    --orgnote-color: #a00;
+    --head-color: var(--fg-color);
+    --subhead-color: var(--fg-color);
+    --subhead2-color: var(--fg-color);
+    --subhead3-color: var(--fg-color);
+    --showhead-color: var(--fg-color);
+    --atvenue-color: var(--fg-color);
+    --times-color: var(--fg-color);
+    --description-color: var(--fg-color);
+    background: var(--bg-color);
+    color: var(--fg-color);
+    font-family: sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+    body {
+      --bg-color: #222;
+      --fg-color: #bbb;
+      --link-color: #ddf;
+      --orgnote-color: #fcc;
+    }
+}
+a,
+a:visited,
+a:active,
+a:hover {
+    color: var(--link-color);
+}
+.days {
+    display: flex;
+}
+.days a {
+    flex: 1 1 auto;
+    display: inline-block;
+    padding: .25em;
+    text-align: center;
+}
+h1, h3 {
+    color: var(--head-color);
+    display: flex;
+    align-items: center;
+    max-width: 100vw;
+}
+h3 > *:first-child {
+    flex: 1 0 auto;
+}
+.calendar {
+    width: min(90vw, 60rem);
+    margin: 0 auto;
+}
+h2, h2 > a {
+    color: var(--subhead-color);
+}
+h3, h3 > a {
+    color: var(--subhead2-color);
+}
+h4, h4 > a {
+    color: var(--subhead3-color);
+    margin: .5em 0;
+}
+h5, h5 > a {
+    color: var(--showhead-color);
+    padding: 0;
+    margin: .5em 0;
+}
+h1 > *,
+h2 > *,
+h3 > * {
+    max-width: 95vw;
+}
+.wherewhen {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .5em;
+}
+.atvenue, .atvenue > a {
+    color: var(--atvenue-color);
+    min-width: 10em;
+}
+.times, .times > a {
+    color: var(--times-color);
+}
+.description, .description > a {
+    color: var(--description-color);
+    font-family: serif;
+    margin: .25em 0 .75em 0;
+}
+.unfocused {
+    opacity: 0.75;
+}
+.unfocused .description,
+.unfocused .note {
+    display: none;
+}
+.note {
+    font-family: serif;
+    font-style: italic;
+}
+.nowrap {
+    white-space: nowrap;
+    display: inline-block;
+}
+.tag {
+    margin-left: .5em;
+    background: var(--link-color);
+    border-radius: 1em;
+    padding: .5em;
+    font-size: 75%;
+    white-space: nowrap;
+    display: inline-block;
+}
+.tag a {
+    color: var(--bg-color);
+}
+.orderby {
+    position: absolute;
+    top: .5em;
+    right: .5em;
+    width: 10em;
+}
+nav details summary {
+    padding: .4em;
+    margin: .1em;
+    color: var(--bg-color);
+    background: var(--link-color);
+}
+.gshow > div {
+    display: flex;
+    align-items: baseline;
+    gap: .5em;
+}
+.gshow .wherewhen {
+    display: contents;
+}
+.gshow .times {
+    order: 99;
+}
+.gshow .spacer {
+    order: 98;
+    flex: 1 1 auto;
+}
+ul {
+    padding: 0 0 .25em 1em;
+}
+@media (max-width: 500px) {
+    h1 {
+        font-size: 1.5rem;
+    }
+    .orderby {
+        right: .25em;
+        max-width: 5em;
+    }
+    .atvenue, .atvenue > a {
+        min-width: 8em;
+    }
+}
+@media print {
+    body {
+        font-size: 69%;
+    }
+    label, input, details, nav, button {
+        display: none;
+    }
+    .calendar {
+        width: 100%;
+    }
+    .level1 {
+        column-width: 14rem;
+        column-gap: 1rem;
+        break-inside: avoid-page;
+    }
+    .show:not(.grouped), .show .show, .gshow {
+        break-inside: avoid-column;
+    }
+    a, a:visited {
+        color: var(--fg-color);
+        text-decoration: none;
+    }
+}
+.share, .fav {
+    appearance:none;
+    background: var(--bg-color);
+    margin: 0 .5em;
+    padding: .5em;
+    border-radius: 50%;
+    font-size: 100%;
+}
+.share svg {
+    width: 1em;
+    height: 1em;
+}
+.strikeout {
+    text-decoration: line-through;
+}
+    </style>
+</head>
+<body>
+    <div class="calendar"></div>
+    <script type="module">
+        import { html, reactive } from 'arrow-js';
+
+        const urlSearch0 = new URLSearchParams(document.location.search);
+        const orderBy = urlSearch0.get('by') || 'day';
+        if (urlSearch0.get('proposal')) window.proposalid = +urlSearch0.get('proposal');
+        if (urlSearch0.get('tag')) window.tagName = urlSearch0.get('tag');
+        if (urlSearch0.get('venue')) window.venueid = +urlSearch0.get('venue');
+        window.onlyFavorites = !!urlSearch0.get('favs');
+
+        const urlSearch = new URLSearchParams();
+        urlSearch.delete('favs');
+        if (calendarid && !pubcalendar) urlSearch.set('calendar', calendarid);
+        if (key) urlSearch.set('key', key);
+        const queryBase = '?' + urlSearch;
+
+        urlSearch.set('by', 'artist');
+        const linkByArtist = '?' + urlSearch;
+        urlSearch.set('by', 'venue');
+        const linkByVenue = '?' + urlSearch;
+        urlSearch.set('by', 'day');
+        const linkByDay = '?' + urlSearch;
+
+        urlSearch.delete('proposal');
+        urlSearch.delete('venue');
+        urlSearch.delete('tag')
+        urlSearch.delete('by')
+        const fullQueryBase = '?' + urlSearch;
+
+        const favs = {
+            proposal: {},
+            tag: {},
+            venue: {}
+        };
+        try {
+            Object.assign(favs, JSON.parse(localStorage.getItem('refringe2026_favs')));
+        } catch (err) {}
+        const saveFavs = () => {
+            try {
+                localStorage.setItem('refringe2026_favs', JSON.stringify(favs));
+            } catch (err) {}
+        };
+
+        const parseDate = s => s && new Date(s+'T00:00:00');
+        const proposalByid = {};
+        const notesByPid = {};
+        const notesBySid = {};
+        const showsByid = {};
+        const tagsByPid = {};
+        const tagsBySid = {};
+        const venuesByid = {};
+        const strikeoutProposalids = {};
+        const strikeoutShowids = {};
+        for (const proposal of proposals) {
+            proposalByid[proposal.id] = proposal;
+            proposal.title = proposal.title?.replace(/^(vvv|www|xxx|yyy|zzz)(\w+: *)?/, '');
+            proposal.title = proposal.title?.replace(/&#039;/g, `'`);
+            proposal.title = proposal.title?.replace(/&quot;/g, `"`);
+            proposal.title = proposal.title?.replace(/Presents:The/, `Presents: The`);
+        }
+        for (const note of notes) {
+            if (note.proposalid) (notesByPid[note.proposalid] ||= []).push(note);
+            if (note.showid) (notesBySid[note.showid] ||= []).push(note);
+        }
+        for (const tag of [...tags, ...showTags]) {
+            if (tag.name === 'Strikeouts') {
+                if (tag.proposalid) strikeoutProposalids[tag.proposalid] = true;
+                if (tag.showid) strikeoutShowids[tag.showid] = true;
+            } else {
+                if (tag.proposalid) (tagsByPid[tag.proposalid] ||= []).push(tag);
+                if (tag.showid) (tagsBySid[tag.showid] ||= []).push(tag);
+            }
+        }
+        for (const venue of venues) {
+            venuesByid[venue.id] = venue;
+        }
+
+        const abbreviate = !venueid && !proposalid & !tagName;
+
+        for (const show of shows) {
+            showsByid[show.id] = show;
+            if (show.dateonly) {
+                show.dateonlyFormat = parseDate(show.dateonly).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'numeric' });
+            }
+            if (show.isinstallation) {
+                show.starttime = '';
+                show.endtime = '';
+                show.starttimeTime = null;
+                show.endtimeTime = null;
+                let sortTime = parseDate(show.dateonly);
+                sortTime.setDate(sortTime.getDate() + 1);
+                show.sortTime = new Date(sortTime.getTime() - 1000);
+            } else if (show.starttime) {
+                show.starttimeTime = new Date(show.dateonly + 'T' + show.starttime);
+                show.starttimeFormat = show.starttimeTime.toLocaleTimeString([], { hour: 'numeric', hour12: true, minute: "2-digit" })
+                    .replace(/:00/g, '');
+                show.sortTime = show.starttimeTime;
+            } else {
+                show.sortTime = parseDate(show.dateonly);
+                show.sortTime.setDate(show.sortTime.getDate() + 1);
+            }
+            if (show.endtime) {
+                show.endtimeTime = new Date(show.dateonly + 'T' + show.endtime);
+                show.endtimeFormat = show.endtimeTime.toLocaleTimeString([], { hour: 'numeric', hour12: true, minute: "2-digit" })
+                    .replace(/:00/g, '');
+            }
+            if (show.starttime && show.endtime && show.starttimeTime > show.endtimeTime) console.log('backwards?', show.title, show.starttime, show.endtime);
+            show.title = show.title?.replace(/^(vvv|www|xxx|yyy|zzz)(\w+: *)?/, '');
+            show.title = show.title?.replace(/&#039;/g, `'`);
+            show.title = show.title?.replace(/&quot;/g, `"`);
+            show.title = show.title?.replace(/Presents:The/, `Presents: The`);
+            const proposal = proposalByid[show.proposalid];
+            show.description = proposal?.description || '';
+            if (abbreviate) {
+                let d = show.description;
+                if (d.length > 212) d = d.slice(0, 212);
+                const lines = d.split('\n');
+                if (lines.length > 2) d = lines.slice(0, 2).join('\n');
+                if (d !== show.description) {
+                    show.isabbr = true;
+                    show.description = d + '...';
+                }
+            }
+            show.first_name = proposal?.first_name || '';
+            show.last_name = proposal?.last_name || '';
+            show.email = proposal?.email || '';
+            show.phone = proposal?.phone || '';
+            show.links = (proposal?.links ?? '').split(/[, \n]/).map(s => s.match(/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/)?.[0]).filter(Boolean) || [];
+            show.notes = [
+                ...(notesByPid[show.proposalid] || []),
+                ...(notesBySid[show.id] || []),
+            ];
+            show.tags = [
+                ...(tagsByPid[show.proposalid] || []),
+                ...(tagsBySid[show.id] || []),
+            ];
+            show.venue = venuesByid[show.venueid];
+            show.venueName = show.venue?.name.replace(/&amp;/g, '&') || '';
+        }
+
+        window.shows = shows.filter(show => {
+            if (!venueid && !proposalid && /\(not co.firmed\)$/.test(show.venue.name)) return false;
+            if (!show.groupshowid) return true;
+            const groupShow = showsByid[show.groupshowid];
+            if (!groupShow) return true;
+            (groupShow.grouped ||= []).push(show);
+            show.dateonly = groupShow.dateonly;
+            show.venueid = groupShow.venueid;
+            if (show.starttime) {
+                show.starttimeTime = new Date(show.dateonly + 'T' + show.starttime);
+                show.starttimeFormat = show.starttimeTime.toLocaleTimeString([], { hour: 'numeric', hour12: true, minute: "2-digit" })
+                    .replace(/:00/g, '');
+            }
+            if (show.endtime) {
+                show.endtimeTime = new Date(show.dateonly + 'T' + show.endtime);
+                show.endtimeFormat = show.endtimeTime.toLocaleTimeString([], { hour: 'numeric', hour12: true, minute: "2-digit" })
+                    .replace(/:00/g, '');
+            }
+            return orderBy !== 'day';
+        });
+
+        const showOrder = (a, b) => {
+            if (a.sortTime && b.sortTime) {
+                const diff = a.sortTime - b.sortTime;
+                if (diff) return diff;
+            }
+            if (a.sortTime && !b.sortTime) return -1;
+            if (b.sortTime && !a.sortTime) return 1;
+            return a.title.localeCompare(b.title);
+        };
+
+        for (const show of shows) show.grouped?.sort(showOrder);
+
+        let subtitle = '';
+        let subdesc = '';
+        let subhref = '';
+
+        if (proposalid) {
+            subdesc = proposals.find(p => p.id === proposalid)?.description.replace(/&amp;/g, '&');
+            subhref = queryBase + '&proposal=' + proposalid;
+            window.shows = window.shows.filter(s => {
+                if (s.proposalid !== proposalid) {
+                    if (!s.grouped?.some(gs => gs.proposalid === proposalid)) return false;
+                    s.grouped = s.grouped?.filter(gs => gs.proposalid === proposalid);
+                }
+                return true;
+            });
+            subtitle = window.shows.flatMap(s => [s, ...(s.grouped || [])])
+                .find(s => s.proposalid === proposalid)?.title || '';
+        }
+        if (tagName) {
+            const tag = tags.find(t => t.name === tagName);
+            subtitle = tag?.emoji ? `${tag.emoji} ${tag.name}` : tagName;
+            subhref = queryBase + '&tag=' + tagName;
+            window.shows = window.shows.filter(s => {
+                if (!s.tags.some(t => t.name === tagName)) {
+                    if (!s.grouped?.some(gs => gs.tags.some(t => t.name === tagName))) return false;
+                    s.grouped = s.grouped?.filter(gs => gs.tags.some(t => t.name === tagName));
+                }
+                return true;
+            });
+            const tagGroupShow = window.shows.find(s => s.title === tagName && s.isgroup);
+            if (tagGroupShow) subdesc = tagGroupShow.description.replace(/&amp;/g, '&');
+        }
+        if (venueid) {
+            const v = venues.find(v => v.id === venueid);
+            subtitle = v?.name.replace(/&amp;/g, '&');
+            subhref = queryBase + '&venue=' + venueid;
+            subdesc = [v.address, v.description].filter(Boolean).join('\n\n');
+
+            window.shows = window.shows.filter(s => s.venueid === venueid);
+        }
+
+        const presentProposalids = new Set();
+        const unseenGroupids = new Set();
+        const presentVenueids = new Set();
+        for (const show of shows.flatMap(s => [s, ...(s.grouped || [])])) {
+            if (show.grouped?.length) {
+                unseenGroupids.add(show.proposalid);
+            } else if (!strikeoutProposalids[show.proposalid] && !strikeoutShowids[show.id]) {
+                presentProposalids.add(show.proposalid);
+            }
+            presentVenueids.add(show.venueid);
+        }
+        const presentTags = new Set();
+        for (const tag of [...tags, ...showTags]) {
+            if (
+                tag.name !== 'Group Show' && tag.name !== 'Strikeouts' &&
+                (showsByid[tag.showid] || shows.some(s => s.proposalid === tag.proposalid))
+            ) {
+                presentTags.add(`${tag.emoji || ''}&nbsp;${tag.name}`);
+            }
+        }
+        const groupShows = shows.filter(s => {
+            if (!s.grouped?.length) return false;
+            if (!unseenGroupids.has(s.proposalid)) return false;
+            unseenGroupids.delete(s.proposalid);
+            return true;
+        });
+        const tagsAsGroups = [...presentTags].map(tag => ({ tag: tag.split('&nbsp;')[1] || tag, name: tag.split('&nbsp;')[0] ? tag : tag.slice(6), nameSort: tag.split('&nbsp;')[1] }));
+        const tagGroupShows = [
+            ...tagsAsGroups,
+            ...groupShows
+                .filter(gs => !tagsAsGroups.some(t => t.tag === gs.title))
+                .map(gs => ({ proposalid: gs.proposalid, name: gs.title, nameSort: gs.title }))
+        ];
+
+        if (window.onlyFavorites) {
+            const favShows = shows.filter(show => {
+                if (
+                    favs.proposal[show.proposalid] ||
+                    (favs.tag[tagName] && show.tags.some(t => t.name === tagName)) ||
+                    favs.venue[show.venue.id]
+                ) return true;
+                if (!show.grouped?.length) return false;
+                show.grouped = show.grouped.filter(gs => 
+                    favs.proposal[gs.proposalid] ||
+                    (favs.tag[tagName] && gs.tags.some(t => t.name === tagName)) ||
+                    favs.venue[gs.venue.id]
+                );
+                return !!show.grouped.length;
+            });
+            if (favShows.length) window.shows = favShows;
+        }
+
+        const hasFavs = () =>
+            !!venues.some(v => favs.venue[v.id]) ||
+            !!proposals.some(p => favs.proposal[p.id]) ||
+            !!shows.some(s => s.tags.some(t => favs.tag[t.name]));
+        const state = reactive({
+            favs,
+            hasFavs: hasFavs(),
+            shows,
+            proposals: proposals.filter(p => presentProposalids.has(p.id)).sort((a, b) => a.titleSort?.localeCompare(b.titleSort)),
+            tagGroupShows: tagGroupShows.sort((a, b) => a.nameSort.localeCompare(b.nameSort)),
+            venues: venues.filter(v => presentVenueids.has(v.id)).sort((a, b) => a.name?.localeCompare(b.name)),
+            noDescription: false
+        });
+        const toggleFav = (k, v) => {
+            state.favs[k][v] = favs[k][v] = !favs[k][v];
+            state.hasFavs = hasFavs();
+            saveFavs();
+        };
+
+        if (orderBy === 'artist') {
+            const byArtist = {};
+            for (const show of shows) (byArtist[show.title?.trim() ?? ''] ||= []).push(show);
+            for (const artistShows of Object.values(byArtist)) artistShows.sort(showOrder);
+            const titles = Object.keys(byArtist).sort((a, b) => a.localeCompare(b));
+            state.shows = titles.map(title => {
+                const shows = byArtist[title];
+                return {
+                    header: title,
+                    description: proposalByid[shows[0].proposalid]?.description,
+                    href: fullQueryBase + '&proposal=' + shows[0].proposalid,
+                    items: shows
+                };
+            });
+        } else if (orderBy === 'venue') {
+            const byVenue = {};
+            for (const show of shows) (byVenue[show.venueName?.trim() || 'Unknown'] ||= []).push(show);
+            for (const artistShows of Object.values(byVenue)) artistShows.sort(showOrder);
+            const titles = Object.keys(byVenue).sort((a, b) => a.localeCompare(b));
+            state.shows = titles.map(title => {
+                const shows = byVenue[title];
+                return {
+                    header: title,
+                    href: fullQueryBase + '&venue=' + byVenue[title][0].venue.id,
+                    items: byVenue[title]
+                };
+            });
+        } else if (!proposalid && !venueid) { // if (orderBy === 'day') {
+            const byDay = {};
+            for (const show of shows) {
+                (byDay[show.dateonly ? show.dateonly : 'Installations'] ||= []).push(show);
+            }
+            for (const dayShows of Object.values(byDay)) dayShows.sort(showOrder);
+            const days = Object.keys(byDay).sort();
+            state.shows = days.map(day => ({
+                header: day === 'Installations' ? day : parseDate(day).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'numeric' }),
+                items: byDay[day].filter(it => !it.isinstallation),
+                installations: byDay[day].filter(it => it.isinstallation),
+                anchor: day
+            }));
+            // for (const day of state.shows) {
+            //     const i = +[...day.header].at(-1);
+            //     if (Number.isFinite(i)) day.header += ' - ' + ['Flowers', 'Branches', 'Roots', 'Seeds'][i-4];
+            // }
+        } else {
+            shows.sort(showOrder);
+            state.shows = shows.map(show => ({
+                header: '',
+                items: [show]
+            }))
+        }
+
+        state.noDescription = state.shows.flatMap(s => s.items.flatMap(it => it.grouped?.length ? it.grouped : [it])).length > 30;
+
+        const isApple = () => navigator.userAgent.match(/Version\/[\d\.]+.*Safari/);
+        const mapUrl = (v) => '../Map/#venue=' + v.id;
+        /*{
+            if (!v?.lat || !v?.lng) return '';
+            return (isApple() ? 'https://maps.apple.com/?ll=' : 'https://www.google.com/maps?q=') + (v.lat.toFixed(5) + ',' + v.lng.toFixed(5)) +
+                (v.name && isApple() ? '&q=' + v.name.replace(/[ &?]/g, '+') : '');
+        };*/
+
+        const renderTag = tag => html`<span class="tag">
+            <a href="${() => fullQueryBase+'&tag='+encodeURIComponent(tag.name)}">${tag.emoji || tag.name}</a>
+        </span>`;
+
+        const showTemplate = show => show.title && html`<div class="${'show' + (strikeoutProposalids[show.proposalid] || strikeoutShowids[show.id] ? ' strikeout' : '') + (show.grouped?.length ? ' grouped' : '')}">
+            <div class="wherewhen">
+                <h4 style="${(orderBy !== 'artist' && !proposalid && show.title !== show.venue.name ? '' : 'display: none; ') + (orderBy !== 'venue' && !venueid ? 'width: 100vw' : '')}">
+                    <a href="${() => fullQueryBase+'&proposal='+show.proposalid}">${show.title}</a>
+                    ${() => show.tags.map(renderTag)}
+                </h4>
+                <div style="${'flex: 1 1 auto; ' + (orderBy === 'artist' || proposalid || show.title === show.venue.name || (orderBy !== 'venue' && !venueid) ? '' : 'display: none')}"></div>
+                <div class="times" style="${show.dateonly || (show.starttime && show.endtime) ? '' : 'display: none'}">
+                    <span class="nowrap" style="${!tagName ? '' : 'display: none'}">${show.dateonlyFormat}</span>
+                    <span class="nowrap" style="${show.starttime && show.endtime ? '' : 'display: none'}">${show.starttimeFormat} - ${show.endtimeFormat}</span>
+                    <div class="atvenue" style="${orderBy !== 'venue' && !venueid ? '' : 'display: none'}">
+                        <a href="${() => fullQueryBase+'&venue='+show.venueid}">${show.venue.name}</a>
+                    </div>
+                </div>
+            </div>
+            ${show.notes.map(note => html`<div class="${'note ' + (note.is_visible_to_public ? '' : 'organizers')}">
+                ${note.content}
+            </div>`)}
+            <p class="description" style="${() => proposalid || orderBy === 'artist' || state.noDescription ? 'display: none' : ''}">
+                ${show.description}
+                <a href="${() => fullQueryBase+'&proposal='+show.proposalid}" style="${show.isabbr ? '' : 'display: none'}">[read more]</a>
+            </p>
+            <ul class="shows-in-group" style="${show.grouped ? '' : 'display: none'}">
+                ${() => show.grouped?.map(gs => html`<li class="${'gshow' + (strikeoutProposalids[gs.proposalid] || strikeoutShowids[gs.id] ? ' strikeout' : '') + (proposalid ? (proposalid !== show.proposalid && proposalid !== gs.proposalid ? ' unfocused' : ' focused') : '')}">
+                    <div>
+                        <div class="wherewhen">
+                            <h5>
+                                <a href="${() => fullQueryBase+'&proposal='+gs.proposalid}">${gs.title}</a>
+                                ${() => gs.tags.filter(t => !show.tags.some(st => st.name === t.name)).map(renderTag)}
+                            </h5>
+                            <div class="times nowrap" style="${gs.starttime && gs.endtime && (!gs.isinstallation || gs.starttime !== show.starttime || gs.endtime !== show.endtime) ? '' : 'display: none'}">
+                                ${gs.starttimeFormat}
+                            </div>
+                        </div>
+                        ${gs.notes.map(note => html`<div class="${'note ' + (note.is_visible_to_public ? '' : 'organizers')}">
+                            (${note.content})
+                        </div>`)}
+                        <div class="spacer"></div>
+                    </div>
+                    <p class="description" style="${() => proposalid === gs.proposalid || state.noDescription ? 'display: none' : ''}">
+                        ${gs.description}
+                        <a href="${() => fullQueryBase+'&proposal='+gs.proposalid}" style="${gs.isabbr ? '' : 'display: none'}">[read more]</a>
+                    </p>
+                </li>`)}
+            </ul>
+        </div>
+        
+        <hr>`.key(show => show.id);
+
+        const dates = [...new Set(shows.map(s => s.dateonly))].sort();
+
+        const template = html`
+<nav>
+    <div class="days">
+        <a href="${fullQueryBase}">🏠</a>
+        <div style="${(orderBy && orderBy !== 'day') || onlyFavorites || proposalid || venueid || (tagName && tagName !== 'Group Show') ? 'display: none' : 'display: contents'}">
+            ${() => dates.map(d => html`<a href="${() => '#' + d}">${d.slice(5)}</a>`)}
+        </div>
+    </div>
+    <div style="${!proposalid && !venueid && !tagName && !onlyFavorites ? 'display: contents' : 'display: none'}">
+        <details>
+            <summary>Artists</summary>
+            <div><a href="${linkByArtist}">(show full schedule by Artist)</a></div>
+            <ul>
+                ${() => state.proposals.map(p => html`<li>
+                    <a href="${fullQueryBase + '&proposal=' + p.id}">${p.title}</a>
+                </li>`)}
+            </ul>
+        </details>
+        <details>
+            <summary>Venues</summary>
+            <div style="display: flex; justify-content: space-between">
+                <a href="${linkByVenue}">(show full schedule by Venue)</a>
+                <a href="../Map/">🗺️ Venue Map</a>
+            </div>
+            <ul>
+                ${() => state.venues.map(v => html`<li>
+                    <a href="${fullQueryBase + '&venue=' + v.id}">${v.name}</a>
+                </li>`)}
+            </ul>
+        </details>
+        <details>
+            <summary>Group Shows</summary>
+            <ul>
+                ${() => state.tagGroupShows.map(tgs => html`<li>
+                    <a href="${fullQueryBase + (
+                        tgs.tag ? '&tag=' + tgs.tag
+                        : '&proposal=' + tgs.proposalid
+                    )}">${tgs.name}</a>
+                </li>`)}
+            </ul>
+        </details>
+        <details style="${() => state.hasFavs ? '' : 'display: none'}">
+            <summary>💛 Favorites</summary>
+            <ul>
+                <li>
+                    <a href="${fullQueryBase + '&favs=1'}">💛 Show all favorites</a>
+                </li>
+            </ul>
+        </details>
+    </div>
+</nav>
+<h1>
+    <a style="${(proposalid || tagName || venueid || onlyFavorites) ? '' : 'display: none'}" href="${fullQueryBase}">
+        ${pubcalendar?.name || calendar.name}
+        <span style="${onlyFavorites ? '' : 'display: none'}"> 💛</span>
+    </a>
+    <span style="${(proposalid || tagName || venueid || onlyFavorites) ? 'display: none' : ''}">${pubcalendar?.name || calendar.name}</span>
+    <button style="${navigator.share && pubcalendar && !subtitle && !onlyFavorites ? '' : 'display: none'}" class="share" @click="${e => e && navigator.share({ text: pubcalendar?.name, url: document.location.href })}">
+        <svg viewBox="0 0 100 100" style="stroke: var(--fg-color); fill: transparent;">
+            <circle style="stroke-width: 6" cx="18" cy="50" r="15"></circle>
+            <circle style="stroke-width: 6" cx="88" cy="20" r="10"></circle>
+            <circle style="stroke-width: 6" cx="88" cy="80" r="10"></circle>
+            <line style="stroke-width: 4;" x1="30" y1="46" x2="80" y2="21"></line>
+            <line style="stroke-width: 4;" x1="30" y1="54" x2="80" y2="79"></line>
+        </svg>
+    </button>
+</h1>
+<div><i>Times and details subject to change</i></div>
+<h3 style="${subtitle ? '' : 'display: none'}">
+    <a style="${subhref ? '' : 'display: none'}" href="${subhref || ''}">${() => subtitle}</a>
+    <span style="${subhref ? 'display: none' : ''}">${() => subtitle}</span>
+    <button style="${navigator.share && subtitle ? '' : 'display: none'}" class="share" @click="${e => e && navigator.share({ text: subtitle + ' - ReFringe', url: document.location.href })}">
+        <svg viewBox="0 0 100 100" style="stroke: var(--fg-color); fill: transparent;">
+            <circle style="stroke-width: 6" cx="18" cy="50" r="15"></circle>
+            <circle style="stroke-width: 6" cx="88" cy="20" r="10"></circle>
+            <circle style="stroke-width: 6" cx="88" cy="80" r="10"></circle>
+            <line style="stroke-width: 4;" x1="30" y1="46" x2="80" y2="21"></line>
+            <line style="stroke-width: 4;" x1="30" y1="54" x2="80" y2="79"></line>
+        </svg>
+    </button>
+    <button
+        class="fav"
+        @click="${e => e && toggleFav(proposalid ? 'proposal' : tagName ? 'tag' : 'venue', proposalid || tagName || venueid)}"
+    >
+        ${() => (state.favs.proposal[proposalid] || state.favs.tag[tagName] || state.favs.venue[venueid]) ? '💛' : '🤍'}
+    </button>
+</h3>
+<div style="display: flex; justify-content: space-around;">
+    <a class="pin" style="${venueid && venuesByid[venueid]?.lat ? '' : 'display: none'}" href="${venueid && mapUrl(venuesByid[venueid]) || ''}" title="View on Map">[📍view on map]</a>
+    <a style="${venueid && venuesByid[venueid]?.url ? '' : 'display: none'}" href="${venuesByid[venueid]?.url}" target="_blank">[visit website]</a>
+</div>
+<p class="subdesc" style="white-space: pre-wrap">${subdesc}</p>
+
+
+${() => state.shows.map(cat1 => html`<div class="${('level1 by-'+orderBy)}">
+    <a name="${cat1.anchor || ''}"></a>
+    <h2>
+        <a style="${cat1.href ? '' : 'display: none'}" href="${cat1.href || ''}">${() => cat1.header}</a>
+        <span style="${cat1.href ? 'display: none' : ''}">${() => cat1.header}</span>
+    </h2>
+
+    <p>${cat1.description || ''}</p>
+    
+    ${() => (cat1.items ?? []).map(showTemplate)}
+
+    <h3 style="${cat1.installations?.length ? '' : 'display: none'}">Installations</h3>
+    
+    ${() => (cat1.installations ?? []).map(showTemplate)}
+
+    ${() => (cat1.items ?? []).map(cat2 => cat2.header && html`<div class="level2">
+        <h3>${() => cat2.header}</h2>
+        
+        <p>${cat2.description || ''}</p>
+
+        ${() => (cat2.items ?? []).map(showTemplate)}
+
+        <h4 style="${cat2.installations?.length ? '' : 'display: none'}">Installations</h4>
+        
+        ${() => (cat2.installations ?? []).map(showTemplate)}
+
+    </div>`)}
+</div>`)}
+        `;
+
+        template(document.querySelector('.calendar'));
+
+            // for (const p of document.querySelectorAll(venueid ? 'p:not(.subdesc)' : 'p')) {
+            //     p.textContent = '';
+            // }
+            // for (const p of document.querySelectorAll('.note')) {
+            //     p.textContent = '';
+            // }
+    </script>

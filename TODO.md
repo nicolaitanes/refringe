@@ -22,6 +22,8 @@
     - [ ] by calendars_proposals.status
     - [ ] by show.iscancelled
 - [ ] callforwork text/links in user, public templates (iframeable for pages?)
+- [ ] "upcoming event" status prior to publishing event schedule
+- [ ] caching and SSR for public event schedules
 - [ ] capture venue lat/long on map
 - [ ] better breadcrumbs
 - [ ] links from calendar-detail

@@ -4,6 +4,7 @@ import SQL from 'sql-template-strings'
 import { pgdb } from './pgdb.js';
 import { proposalsDB } from './proposals.js';
 import { renderTemplate } from './templates.js';
+import { tmplJsonFields } from './time.js';
 
 export const markdownConverter = new showdown.Converter({
     safeMode: true,
@@ -134,7 +135,7 @@ router.use(express.json());
 router.get('/', async (req, res) => {
     const questions = nestQuestions(await questionsDB.list(req.query));
     if (req.headers.accept?.includes('application/json')) return res.json({ questions });
-    return renderTemplate({ template: 'questions', questions: JSON.stringify(questions).replace(/\\/g, '\\\\') })(req, res);
+    return renderTemplate(tmplJsonFields({ template: 'questions', questions }))(req, res);
 });
 
 router.post('/', async (req, res) => {

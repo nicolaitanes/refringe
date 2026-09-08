@@ -1,7 +1,7 @@
 {{> header title="All Venues" sitename=sitename opengraph=opengraph }}
 {{> breadcrumb title="All Venues" }}
 
-<div class="ma1">
+<div class="ma1 venue-mgt">
     <h3>All Venues</h3>
     
     <table class="table">
@@ -31,3 +31,19 @@
         </tbody>
     </table>
 </div>
+
+<script type="module">
+    import { createApp } from 'vue';
+    import NotesButton from 'notesButton';
+    import TagChip from 'tagChip';
+
+    const TestApp = {
+        components: {
+            NotesButton,
+            TagChip
+        },
+        delimiters: ['[[', ']]'],
+    }
+    createApp(TestApp).mount('div.venue-mgt');
+</script>
+

@@ -1,9 +1,12 @@
 import express from 'express';
 import multer from 'multer';
 import SQL from 'sql-template-strings'
+import { notesDB } from './notes.js';
 import { pgdb } from './pgdb.js';
 import { markdownConverter } from './questions.js';
+import { tagsDB } from './tags.js';
 import { renderTemplate } from './templates.js';
+import { tmplJson, tmplJsonFields } from './time.js';
 
 const upload = multer();
 
@@ -83,11 +86,11 @@ export const calendarsDB = {
         await pgdb.update('calendars_'+entity, [id, entityid], { calendarid: id, [entity+'id']: entityid, active: false }, query);
     },
     async listProposals(id) {
-        const result = await pgdb.query(SQL`select p.*, u.fullname from proposals p join users u on p.userid = u.id left join calendars_proposals c on c.proposalid = p.id where p.active and u.active and (calendarid is not null or allcalendars) order by title, fullname`);
+        const result = await pgdb.query(SQL`select p.*, u.fullname from proposals p join users u on p.userid = u.id left join calendars_proposals c on c.proposalid = p.id where p.active and u.active and (calendarid is null or calendarid=${id} or allcalendars) order by title, fullname`);
         return result.rows;
     },
     async listVenues(id) {
-        const result = await pgdb.query(SQL`select v.* from venues v left join calendars_venues c on c.venueid = v.id where v.active and (calendarid is not null or allcalendars) order by name`);
+        const result = await pgdb.query(SQL`select v.* from venues v left join calendars_venues c on c.venueid = v.id where v.active and (calendarid is null or calendarid = ${id} or allcalendars) order by name`);
         return result.rows;
     },
     async listShows(id) {
@@ -135,85 +138,6 @@ export const calendarsDB = {
 
 export const router = express.Router();
 router.use(express.json());
-
-router.get('/', async (req, res) => {
-    const calendars = await calendarsDB.list(req.query);
-    if (req.headers.accept?.includes('application/json')) return res.json({ calendars });
-    return renderTemplate({
-        template: 'calendars',
-        calendars: JSON.stringify(calendars).replace(/\\/g, '\\\\')
-    })(req, res);
-});
-
-router.get('/:id', async (req, res) => {
-    const calendar = await calendarsDB.get(req.params.id);
-    if (!calendar) return res.status(404).send('Not Found');
-    let status = !calendar.active ? 'inactive'
-          : calendar.ispublic ? 'public'
-          : calendar.calling_public ? 'publiccall'
-          : calendar.calling_users ? 'usercall'
-          : 'draft';
-    if (calendar.deadline && status.endsWith('call') && calendar.deadline < new Date()) {
-        status = 'draft';
-    }
-    if (!req.auth || req.auth.l > 20) {
-        if (!status.startsWith('public')) return res.status(403).send('Forbidden');
-    } else if (req.auth.l > 10) {
-        if (status !== 'public' && status !== 'usercall') return res.status(403).send('Forbidden');
-    }
-    if (req.headers.accept?.includes('application/json')) return res.json(calendar);
-    if (!status.endsWith('call')) {
-        calendar.callforwork = null;
-        calendar.deadline = null;
-    }
-    calendar.name = calendar.publicname || calendar.name;
-    return renderTemplate({
-        template: req.auth && req.auth.l <= 10 ? 'calendar-edit' : 'calendar-detail',
-        calendar,
-        calendarJSON: JSON.stringify(calendar).replace(/\\/g, '\\\\'),
-        status
-    })(req, res);
-});
-
-router.post('/', async (req, res) => {
-    if (!req.auth || req.auth.l > 10) return res.status(403).send('Forbidden');
-    try {
-        const calendar = await calendarsDB.add(req.body);
-        const { id: publicid, ...pc } = req.body.key
-            ? await calendarsDB.addPublic({
-                calendarid: calendar.id,
-                publicname: req.body.publicname || calendar.name,
-                key: req.body.key,
-                ispublic: !!req.body.ispublic,
-                priority: req.body.priority ?? 100
-            })
-            : {};
-        Object.assign(calendar, { publicid }, pc);
-        return res.json(calendar);
-    } catch (err) {
-        console.log(err);
-        return res.status(500).send('Unknown Error');
-    }
-});
-
-router.put('/:id', async (req, res) => {
-    if (!req.auth || req.auth.l > 10) return res.status(403).send('Forbidden');
-    try {
-        const calendar = await calendarsDB.update(req.params.id, req.body);
-        if (req.body.publicid || req.body.key) {
-            const pc = { ...req.body, id: req.body.publicid, calendarid: req.params.id };
-            pc.publicname ||= calendar.name;
-            const { id: publicid, ...newpc } = pc.id
-                ? await calendarsDB.updatePublic(pc.id, pc)
-                : await calendarsDB.addPublic(pc);
-            Object.assign(calendar, { publicid }, newpc);
-        }
-        return res.json(calendar);
-    } catch (err) {
-        console.log(err);
-        return res.status(500).send('Unknown Error');
-    }
-});
 
 router.get('/:id/proposals', async (req, res) => {
     if (!req.auth || req.auth.l > 10) return res.status(403).send('Forbidden');
@@ -299,17 +223,124 @@ router.get('/public/:key', async (req, res) => {
     return res.status(404).send('Not Found');
 });
 
-const getSchedule = async (req, res) => {
+router.get('/events/', async (req, res) => {
+    // TODO fullcalendar of public calendars and upcoming deadlines; pre-highlight next event
+    const calendar = (await calendarsDB.list({ active: true, current: true, ispublic: true, limit: 1 }))[0];
+    res.redirect(303, calendar?.key ? '/calendars/events/' + calendar.key : '/');
+});
+
+router.get('/events/:key', async (req, res) => {
     const calendar = req.params.key
           ? await calendarsDB.getPublic(req.params.key)
           : (await calendarsDB.list({ active: true, current: true, ispublic: true, limit: 1 }))[0];
     if (!calendar) return res.status(404).send('Not Found');
-    return renderTemplate({
-        template: 'schedule',
-        calendar: JSON.stringify(calendar).replace(/\\/g, '\\\\'),
-        // TODO more data, prerendering
-    })(req, res);
-};
+    // TODO short-duration caching
+    const [
+        proposals,
+        venues,
+        shows,
+        notes,
+        tags,
+        showTags
+    ] = await Promise.all([
+        calendarsDB.listProposals(calendar.calendarid),
+        calendarsDB.listVenues(calendar.calendarid),
+        calendarsDB.listShows(calendar.calendarid),
+        notesDB.list({ active: true, level: 99 }),
+        tagsDB.listLinked('proposal', null, { active: true, level: 99 }),
+        tagsDB.listLinked('show', null, { active: true, level: 99 })
+    ]);
+    return renderTemplate(tmplJsonFields({
+        template: 'event-schedule',
+        key: calendar.key,
+        calendarid: calendar.id,
+        proposalid: req.query.proposal || '',
+        tagname: req.query.tag || '',
+        venueid: req.query.venue || '',
+        calendar: { ...calendar, id: calendar.calendarid, publicid: calendar.id },
+        publiccalendar: calendar,
+        proposals,
+        venues,
+        shows: shows.filter(s => s.venueid),
+        notes,
+        tags,
+        showTags
+    }))(req, res);
+    // TODO more SSR based on req.query (also `by: 'artist' | 'venue' | 'day')
+});
 
-router.get('/schedule/', getSchedule);
-router.get('/schedule/:key', getSchedule);
+router.get('/', async (req, res) => {
+    const calendars = await calendarsDB.list(req.query);
+    if (req.headers.accept?.includes('application/json')) return res.json({ calendars });
+    return renderTemplate(tmplJsonFields({ template: 'calendars', calendars }))(req, res);
+});
+
+router.get('/:id', async (req, res) => {
+    const calendar = await calendarsDB.get(req.params.id);
+    if (!calendar) return res.status(404).send('Not Found');
+    let status = !calendar.active ? 'inactive'
+          : calendar.ispublic ? 'public'
+          : calendar.calling_public ? 'publiccall'
+          : calendar.calling_users ? 'usercall'
+          : 'draft';
+    if (calendar.deadline && status.endsWith('call') && calendar.deadline < new Date()) {
+        status = 'draft';
+    }
+    if (!req.auth || req.auth.l > 20) {
+        if (!status.startsWith('public')) return res.status(403).send('Forbidden');
+    } else if (req.auth.l > 10) {
+        if (status !== 'public' && status !== 'usercall') return res.status(403).send('Forbidden');
+    }
+    if (req.headers.accept?.includes('application/json')) return res.json(calendar);
+    if (!status.endsWith('call')) {
+        calendar.callforwork = null;
+        calendar.deadline = null;
+    }
+    calendar.name = calendar.publicname || calendar.name;
+    return renderTemplate({
+        template: req.auth && req.auth.l <= 10 ? 'calendar-edit' : 'calendar-detail',
+        calendar,
+        calendarJSON: tmplJson(calendar),
+        status
+    })(req, res);
+});
+
+router.post('/', async (req, res) => {
+    if (!req.auth || req.auth.l > 10) return res.status(403).send('Forbidden');
+    try {
+        const calendar = await calendarsDB.add(req.body);
+        const { id: publicid, ...pc } = req.body.key
+            ? await calendarsDB.addPublic({
+                calendarid: calendar.id,
+                publicname: req.body.publicname || calendar.name,
+                key: req.body.key,
+                ispublic: !!req.body.ispublic,
+                priority: req.body.priority ?? 100
+            })
+            : {};
+        Object.assign(calendar, { publicid }, pc);
+        return res.json(calendar);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send('Unknown Error');
+    }
+});
+
+router.put('/:id', async (req, res) => {
+    if (!req.auth || req.auth.l > 10) return res.status(403).send('Forbidden');
+    try {
+        const calendar = await calendarsDB.update(req.params.id, req.body);
+        if (req.body.publicid || req.body.key) {
+            const pc = { ...req.body, id: req.body.publicid, calendarid: req.params.id };
+            pc.publicname ||= calendar.name;
+            const { id: publicid, ...newpc } = pc.id
+                ? await calendarsDB.updatePublic(pc.id, pc)
+                : await calendarsDB.addPublic(pc);
+            Object.assign(calendar, { publicid }, newpc);
+        }
+        return res.json(calendar);
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send('Unknown Error');
+    }
+});

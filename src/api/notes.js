@@ -12,6 +12,10 @@ export const notesDB = {
                           left join notes_users nu on nu.noteid = n.id
                           left join notes_venues nv on nv.noteid = n.id
                           where 1=1`;
+        if (q.proposalid) query.append(SQL` and proposalid = ${q.proposalid}`);
+        if (q.showid) query.append(SQL` and showid = ${q.showid}`);
+        if (q.userid) query.append(SQL` and userid = ${q.userid}`);
+        if (q.venueid) query.append(SQL` and venueid = ${q.venueid}`);
         if ('level' in q) {
             if (q.level > 20) query.append(SQL` and n.is_visible_to_public`)
             else if (q.level > 10) query.append(SQL` and n.is_visible_to_proposers`)

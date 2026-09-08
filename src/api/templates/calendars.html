@@ -92,6 +92,7 @@
     });
 
     const fromEdits = (cal) => ({
+        ...cal,
         editing: false,
         active: cal.newActive,
         name: cal.newName,

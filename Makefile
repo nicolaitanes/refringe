@@ -14,3 +14,5 @@ clean: remove
 	rm logs/refringe-logs.sqlite
 apilogs:
 	docker compose logs refringe-api
+sqlcmd:
+	docker compose exec refringe-pg psql -U refringe

@@ -2,6 +2,7 @@ import express from 'express';
 import SQL from 'sql-template-strings'
 import { pgdb } from './pgdb.js';
 import { renderTemplate } from './templates.js';
+import { tmplJsonFields } from './time.js';
 
 export const tagsDB = {
     async list(q) {
@@ -77,7 +78,7 @@ router.get('/', async (req, res) => {
     const q = { ...req.query, level: req.auth.l };
     const tags = await tagsDB.list(q);
     if (req.headers.accept?.includes('application/json')) return res.json({ tags });
-    return renderTemplate({ template: 'tags', tags: JSON.stringify(tags).replace(/\\/g, '\\\\') })(req, res);
+    return renderTemplate(tmplJsonFields({ template: 'tags', tags }))(req, res);
 });
 
 router.post('/', async (req, res) => {

@@ -4,6 +4,7 @@ import showdown from 'showdown';
 import SQL from 'sql-template-strings'
 import { pgdb } from './pgdb.js';
 import { renderTemplate } from './templates.js';
+import { tmplJsonFields } from './time.js';
 
 const markdownConverter = new showdown.Converter({
     simplifiedAutoLink: true,
@@ -78,7 +79,7 @@ router.get('/', async (req, res) => {
     if (req.headers.accept?.includes('application/json')) {
         return res.json({ pages });
     }
-    return renderTemplate({ template: 'pages', pages: JSON.stringify(pages).replace(/\\/g, '\\\\') })(req, res);
+    return renderTemplate(tmplJsonFields({ template: 'pages', pages }))(req, res);
 });
 
 router.post('/', async (req, res) => {
