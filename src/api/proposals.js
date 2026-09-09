@@ -64,7 +64,7 @@ router.get('/new', async (req, res) => {
     const questionsDB = new QuestionsDB(req);
     const questions = await questionsDB.list({ active: true, forproposal: true });
     const events = await calendarsDB.list({ active: true, current: true });
-    return renderTemplate({ template: 'proposal-new', questions, events })(req, res);
+    return renderTemplate(writeLocalJsonDates({ template: 'proposal-new', questions, events }))(req, res);
 });
 
 router.get('/', async (req, res) => {
@@ -95,7 +95,7 @@ router.get('/:id', async (req, res) => {
     // otherwise render with template
     const questions = await questionsDB.listAnswers({ proposalid: req.params.id });
     const events = await calendarsDB.listLinked('proposal', req.params.id, true);
-    return renderTemplate({ template: 'proposal-edit', proposal, questions, events })(req, res);
+    return renderTemplate(writeLocalJsonDates({ template: 'proposal-edit', proposal, questions, events }))(req, res);
 });
 
 router.post('/', async (req, res) => {

@@ -79,7 +79,7 @@ router.get('/new', async (req, res) => {
     const questionsDB = new QuestionsDB(req);
     const questions = await questionsDB.list({ active: true, forvenue: true });
     const events = await calendarsDB.list({ active: true, current: true });
-    return renderTemplate({ template: 'venue-new', questions, events })(req, res);
+    return renderTemplate(writeLocalJsonDates({ template: 'venue-new', questions, events }))(req, res);
 });
 
 router.get('/', async (req, res) => {
@@ -107,7 +107,7 @@ router.get('/:id', async (req, res) => {
     // otherwise render with template
     const questions = await questionsDB.listAnswers({ venueid: req.params.id });
     const events = await calendarsDB.listLinked('venue', req.params.id, true);
-    return renderTemplate({ template: 'venue-edit', venue, questions, events })(req, res);
+    return renderTemplate(writeLocalJsonDates({ template: 'venue-edit', venue, questions, events }))(req, res);
 });
 
 router.post('/', async (req, res) => {

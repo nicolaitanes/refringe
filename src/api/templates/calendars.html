@@ -50,7 +50,7 @@
         <i>[[ formatDate(cal.startdate) || '' ]] - [[formatDate(cal.enddate) || '' ]]</i>
       </div>
       <div v-if="cal.ispublic">
-        Published under key: <i>[[ cal.key ]]</i>
+        Published under key: <a :href="'events/' + cal.key">[[ cal.key ]]</a>
       </div>
       <div v-if="cal.callforwork">
         <b>Call for work:</b>
