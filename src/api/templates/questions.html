@@ -15,8 +15,9 @@
                         <button @click="addFollowup(q)">Add Followup</button>
                     </div>
                     <div v-if="q.editing" class="question-edit">
-                        <label>Active: <input type="checkbox" v-model="q.newActive"></label>
-                        <label>Question: <input type="text" v-model="q.newQuestion"></label>
+                      <div class="formfields">
+                        <label class="twofields"><input type="checkbox" v-model="q.newActive"> Active</label>
+                        <label class="twofields" >Question:</label> <input class="twofields" type="text" v-model="q.newQuestion">
                         <label>Field Name: <input type="text" v-model="q.newFieldname"></label>
                         <label>Field Type:
                             <select v-model="q.newFieldtype">
@@ -25,16 +26,18 @@
                                 <option value="yesno">Yes/No</option>
                             </select>
                         </label>
-                        <label>Priority: <input type="number" v-model="q.newPriority"></label>
-                        <label>Choices (comma-separated): <input type="text" v-model="q.newChoices"></label>
-                        <label>Pattern: <input type="text" v-model="q.newPattern"></label>
-                        <label>Required: <input type="checkbox" v-model="q.newRequired"></label>
-                        <label>Public: <input type="checkbox" v-model="q.newPublic"></label>
-                        <button @click="saveQuestion(q)">Save</button>
-                        <button @click="q.editing = false">Cancel</button>
+                        <label>Priority:</label> <input type="number" v-model="q.newPriority">
+                        <label>Choices (comma-separated):</label> <input type="text" v-model="q.newChoices">
+                        <label>Pattern:</label> <input type="text" v-model="q.newPattern">
+                        <label><input type="checkbox" v-model="q.newRequired"> Required</label>
+                        <label><input type="checkbox" v-model="q.newPublic"> Public</label>
+                      </div>
+                      <button @click="saveQuestion(q)">Save</button>
+                      <button @click="q.editing = false">Cancel</button>
                     </div>
                     <div v-if="q.adding" class="question-add">
-                        <label>Question: <input type="text" v-model="q.newQuestion"></label>
+                      <div class="formfields">
+                        <label class="twofields">Question:</label> <input class="twofields" type="text" v-model="q.newQuestion">
                         <label>Field Name: <input type="text" v-model="q.newFieldname"></label>
                         <label>Field Type:
                             <select v-model="q.newFieldtype">
@@ -43,13 +46,14 @@
                                 <option value="yesno">Yes/No</option>
                             </select>
                         </label>
-                        <label>Priority: <input type="number" v-model="q.newPriority"></label>
-                        <label>Choices (comma-separated): <input type="text" v-model="q.newChoices"></label>
-                        <label>Pattern: <input type="text" v-model="q.newPattern"></label>
-                        <label>Required: <input type="checkbox" v-model="q.newRequired"></label>
-                        <label>Public: <input type="checkbox" v-model="q.newPublic"></label>
-                        <button @click="saveNewQuestion(section.key, q)">Save</button>
-                        <button @click="q.adding = false">Cancel</button>
+                        <label>Priority:</label> <input type="number" v-model="q.newPriority">
+                        <label>Choices (comma-separated):</label> <input type="text" v-model="q.newChoices">
+                        <label>Pattern:</label> <input type="text" v-model="q.newPattern">
+                        <label><input type="checkbox" v-model="q.newRequired"> Required</label>
+                        <label><input type="checkbox" v-model="q.newPublic"> Public</label>
+                      </div>
+                      <button @click="saveNewQuestion(section.key, q)">Save</button>
+                      <button @click="q.adding = false">Cancel</button>
                     </div>
                 </div>
             </template>

@@ -22,11 +22,11 @@
     - include public callforwork deadlines
 - [ ] schedule preview/admin tools
     
-## Fix
+## Fix/Test
 
 - [ ] test and improve question editor
      - [ ] fix followups
-     - [ ] layout
+     - [ ] layout: nest followups
      - [ ] saving / disabled
      - [ ] !q.active / strikethrough
      - [ ] <option>text</option> selected by default

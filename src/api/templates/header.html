@@ -157,6 +157,12 @@
          align-items: baseline;
          margin-top: 1em;
      }
+     .formfields label:not(:has(input[type="checkbox"])) {
+         display: flex;
+     }
+     .formfields input {
+         flex: 1 0 4em;
+     }
      .twofields {
         grid-column-start: 1;
         grid-column-end: 3;
