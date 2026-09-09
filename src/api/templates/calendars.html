@@ -47,7 +47,7 @@
       <h3>[[ cal.publicname || cal.name || '(no name)' ]][[ !cal.publicname || cal.publicname === cal.name ? '' : '('+cal.name+')' ]]</h3>
       <div v-html="cal.notesHTML || ''"></div>
       <div v-if="cal.startdate || cal.enddate">
-        <i>[[ cal.startdate || '' ]] - [[cal.enddate || '' ]]</i>
+        <i>[[ formatDate(cal.startdate) || '' ]] - [[formatDate(cal.enddate) || '' ]]</i>
       </div>
       <div v-if="cal.ispublic">
         Published under key: <i>[[ cal.key ]]</i>
@@ -59,7 +59,7 @@
         <div v=html="cal.callforworkHTML || ''"></div>
       </div>
       <div v-if="cal.deadline">
-        <b>Deadline: [[ cal.deadline ]]</b>
+        <b>Deadline: [[ formatDate(cal.deadline) ]]</b>
       </div>
       <button @click="editCalendar(cal)">Edit</button>
       <a :href="cal.id" title="Schedule Shows">Schedule Shows</a>
@@ -70,6 +70,19 @@
 
 <script type="module">
     import { computed, createApp, ref } from 'vue';
+
+    function readDate(dateString) {
+        if (dateString instanceof Date) return dateString;
+        return new Date(dateString + 'T00:00:00');
+    }
+    function readTime(timeString) {
+        if (!timeString) return null;
+        if (timeString instanceof Date) return timeString;
+        const [hours, minutes] = timeString.split(':');
+        const date = new Date();
+        date.setHours(parseInt(hours), parseInt(minutes));
+        return date;
+    }
 
     let nextFakeID = -1;
 
@@ -138,7 +151,14 @@
             for (const cal of allCalendars.value) resetEdits(cal);
             const errorMessage = ref('');
             const showInactive = ref(false);
-            const calendars = computed(() => showInactive.value ? allCalendars.value.slice() : allCalendars.value.filter(c => c.active));
+            const calendars = computed(() => (showInactive.value
+                ? allCalendars.value
+                : allCalendars.value.filter(c => c.active)
+            ).map(c => Object.assign(c, {
+                startdate: readDate(c.startdate),
+                enddate: readDate(c.enddate),
+                deadline: readDate(c.deadline)
+            })));
   
             return {
                 allCalendars,
@@ -148,6 +168,14 @@
             };
         },
         methods: {
+            formatDate(dateString) {
+                if (!dateString) return '';
+                const date = readDate(dateString);
+                return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()-2000}`;
+            },
+            formatTime(timeString) {
+                return readTime(timeString).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            },
             addCalendar() {
                 this.allCalendars.push(resetEdits({
                     editing: true,

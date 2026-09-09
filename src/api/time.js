@@ -20,7 +20,7 @@ export function writeLocalJsonDates(obj) {
         if (Array.isArray(v)) {
             result[k] = v.map(vv => vv && typeof vv === 'object' ? writeLocalJsonDates(vv) : vv);
         } else if (v instanceof Date) {
-            const cutPoint = k.includes('updated') ? undefined : k.toLowerCase().includes('date') ? 10 : 19;
+            const cutPoint = k.includes('updated') ? undefined : k.toLowerCase().includes('date') || k.toLowerCase().includes('deadline') ? 10 : 19;
             result[k] = v.toISOString().slice(0, cutPoint);
         } else if (v && typeof v === 'object') {
             result[k] = writeLocalJsonDates(v);

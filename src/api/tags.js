@@ -81,6 +81,7 @@ router.get('/', async (req, res) => {
     const q = { ...req.query, level: req.auth.l };
     const tags = await tagsDB.list(q);
     if (req.headers.accept?.includes('application/json')) return res.json({ tags });
+    if (!req.auth || req.auth.l > 10) return res.status(403).send('Forbidden');
     return renderTemplate(tmplJsonFields({ template: 'tags', tags }))(req, res);
 });
 

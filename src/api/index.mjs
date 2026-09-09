@@ -21,18 +21,13 @@ const args = yargs.option('verbose', {
     alias: 'v',
     type: 'boolean',
     description: 'Run with verbose logging'
-}).option('origin', {
-    alias: 'o',
-    default: 'https://refringe.mandelics.com',
-    type: 'string',
-    description: 'Base URL path'
 }).argv;
     
 initTemplates('./templates');
 
 const app = express();
 app.use(compression());
-app.use(cors({ origin: args.origin }));
+app.use(cors({ origin: process.env.API_ORIGIN }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
 app.use(renderPage);

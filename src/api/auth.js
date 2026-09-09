@@ -1,5 +1,6 @@
 import { renderTemplate } from './templates.js';
 import { QuestionsDB } from './questions.js';
+import { writeLocalJsonDates } from './time.js';
 import { UsersDB } from './users.js';
 import multer from 'multer';
 
@@ -22,8 +23,8 @@ const levelRestricted = {
     '/calendars/public': 10, // organizer+
     '/config': 10,
     '/pages': 10,
+    '/proposals': 10,
     '/questions': 10,
-    '/tags': 10,
     '/testdb': 0, // admin+
     '/users': 10,
     '/venues': 10
@@ -157,7 +158,7 @@ export const initAuth = app => {
         await Promise.all(users.map(async u => {
             u.questions = await questionsDB.listAnswers({ userid: u.id });
         }));
-        return renderTemplate({ users, template: 'users' })(req, res);
+        return renderTemplate(writeLocalJsonDates({ users, template: 'users' }))(req, res);
     });
     
     app.get('/user/:id', async (req, res) => {

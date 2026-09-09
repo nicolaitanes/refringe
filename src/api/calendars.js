@@ -6,7 +6,7 @@ import { logged, pgdb } from './pgdb.js';
 import { markdownConverter } from './questions.js';
 import { TagsDB } from './tags.js';
 import { renderTemplate } from './templates.js';
-import { tmplJson, tmplJsonFields } from './time.js';
+import { tmplJson, tmplJsonFields, writeLocalJsonDates } from './time.js';
 
 const upload = multer();
 
@@ -325,12 +325,12 @@ router.get('/:id', async (req, res) => {
         calendar.deadline = null;
     }
     calendar.name = calendar.publicname || calendar.name;
-    return renderTemplate({
+    return renderTemplate(writeLocalJsonDates({
         template: req.auth && req.auth.l <= 10 ? 'calendar-edit' : 'calendar-detail',
         calendar,
         calendarJSON: tmplJson(calendar),
         status
-    })(req, res);
+    }))(req, res);
 });
 
 router.post('/', async (req, res) => {
@@ -359,14 +359,18 @@ router.put('/:id', async (req, res) => {
     if (!req.auth || req.auth.l > 10) return res.status(403).send('Forbidden');
     const calendarsDB = await new CalendarsDB(req);
     try {
-        const calendar = calendarsDB.update(req.params.id, req.body);
+        let calendar = await calendarsDB.update(req.params.id, req.body);
         if (req.body.publicid || req.body.key) {
             const pc = { ...req.body, id: req.body.publicid, calendarid: req.params.id };
             pc.publicname ||= calendar.name;
             const { id: publicid, ...newpc } = pc.id
                 ? await calendarsDB.updatePublic(pc.id, pc)
                 : await calendarsDB.addPublic(pc);
-            Object.assign(calendar, { publicid }, newpc);
+            calendar = {
+                ...calendar,
+                ...newpc,
+                publicid
+            };
         }
         return res.json(calendar);
     } catch (err) {

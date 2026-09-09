@@ -5,6 +5,7 @@ import { CalendarsDB } from './calendars.js';
 import { logged, pgdb } from './pgdb.js';
 import { QuestionsDB } from './questions.js';
 import { renderTemplate } from './templates.js';
+import { writeLocalJsonDates } from './time.js';
 
 const upload = multer();
 
@@ -69,6 +70,7 @@ router.get('/new', async (req, res) => {
 router.get('/', async (req, res) => {
     const calendarsDB = new CalendarsDB(req);
     const proposalsDB = new ProposalsDB(req);
+    const questionsDB = new QuestionsDB(req);
     const proposals = await proposalsDB.list({
         active: true,
         ...req.query
@@ -78,7 +80,7 @@ router.get('/', async (req, res) => {
     await Promise.all(proposals.map(async p => {
         p.questions = await questionsDB.listAnswers({ proposalid: p.id });
     }));
-    return renderTemplate({ template: 'proposals', proposals })(req, res);
+    return renderTemplate(writeLocalJsonDates({ template: 'proposals', proposals }))(req, res);
 });
 
 router.get('/:id', async (req, res) => {
@@ -135,6 +137,7 @@ router.post('/:id', async (req, res) => {
     try {
         pgdb.logEvent(req.auth.u, 'proposal edit', req.body);
         const proposal = parseProposal(req.body);
+        if (req.auth.l > 10 && req.auth.u !== proposal.userid) return res.status(403).send('Forbidden');
         await proposalsDB.update(req.params.id, proposal);
 
         const answers = await questionsDB.listAnswers({ proposalid: req.params.id });

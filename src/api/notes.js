@@ -97,9 +97,9 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
     try {
+        const notesDB = new NotesDB(req);
         const note = await notesDB.get(req.params.id);
         if (req.auth?.u !== note.created_by_userid) return res.status(403).send('Forbidden');
-        const notesDB = new NotesDB(req);
         const newNote = await notesDB.update(req.params.id, req.body);
         return res.json(newNote);
     } catch (err) {
@@ -110,9 +110,9 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async(req, res) => {
     try {
+        const notesDB = new NotesDB(req);
         const note = await notesDB.get(req.params.id);
         if (!req.auth || !(req.auth.u === note.created_by_userid || req.auth.l <= 10)) return res.status(403).send('Forbidden');
-        const notesDB = new NotesDB(req);
         await notesDB.delete(req.params.id);
         return res.status(204).send();
     } catch (err) {

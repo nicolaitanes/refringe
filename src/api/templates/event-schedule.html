@@ -2,7 +2,6 @@
 
 <script>
   window.key = `{{ key }}`;
-  window.calendarid = `{{ calendarid }}`;
   window.proposalid = `{{ proposalid }}`;
   window.tagName = `{{ tagname }}`;
   window.venueid = `{{ venueid }}`;
@@ -238,7 +237,6 @@ ul {
 
         const urlSearch = new URLSearchParams();
         urlSearch.delete('favs');
-        if (calendarid && !pubcalendar) urlSearch.set('calendar', calendarid);
         if (key) urlSearch.set('key', key);
         const queryBase = '?' + urlSearch;
 

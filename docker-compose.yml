@@ -26,10 +26,16 @@ services:
     container_name: refringe-api
     hostname: refringe-api
     environment:
+      API_ORIGIN: "${API_ORIGIN:-http://localhost:8080}"
       COOKIE_SECRET: "${COOKIE_SECRET:-changeme}"
+      MAIL_FROM: "${MAIL_FROM}"
+      MAIL_REPLYTO: "${MAIL_REPLYTO}"
       POSTGRES_DB: "${POSTGRES_DB:-refringe}"
       POSTGRES_USER: "${POSTGRES_USER:-refringe}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-changeme}"
+      SMTP_HOST: "${SMTP_HOST}"
+      SMTP_USER: "${SMTP_USER}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD}"
     working_dir: /api
     entrypoint: ["/api/entrypoint.sh"]
     command: ["npm", "start"]

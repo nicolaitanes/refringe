@@ -3,18 +3,20 @@
 <script src="/js/fullcalendar/index.global.min.js"></script>
 
 <style>
+.header.header {
+    max-width: calc(100vw - 2rem);
+}
 #divMain {
     display: grid;
     grid-template-columns: 0.618fr 1.618fr;
     grid-template-rows: auto 1.618fr 0.618fr;
     gap: 1em;
-    height: 100vh;
 }
 h1 {
     margin: .25em 0;
 }
 .panel {
-    background: #f8f8f8;
+    background: var(--bg);
     border-radius: 8px;
     box-shadow: 0 2px 8px #0001;
     padding: 1em;
@@ -53,7 +55,7 @@ h1 {
 }
 #calendar {
     flex: 1 1 auto;
-    max-height: 65vh;
+    max-height: 55vh;
 }
 .tag-chips {
     padding: .1em;

@@ -1,22 +1,38 @@
 # TODO
 
+## Deploy test site
+
+- [x] nginx conf
+- [ ] dns for refringe.mandelics.com
+- [ ] publish to github
+- [ ] clone sxs with mandelics-site
+- [ ] deploy mandelics-site/docker-compose with customizations
+
 ## Features
 
-- [ ] iframeable monthly fullcalendar, in seeded / and /cur-events/
-    - include public callforwork deadlines
-- [ ] schedule preview/admin tools
 - [ ] email
-    - [ ] new users
+    - [ ] new users: confirmation
+        - [ ] add user.email_confirmed
+        - [ ] policy for id (created) + days should/must confirm
     - [ ] proposals to proposers
     - [ ] venues to creator
     - [ ] email a single proposer, e.g. draft schedule, when status changes, etc.
     - [ ] mass email to proposers on a calendar
+- [ ] iframeable monthly fullcalendar, in seeded / and /cur-events/
+    - include public callforwork deadlines
+- [ ] schedule preview/admin tools
     
 ## Fix
 
-- [ ] calendars/ item disappears from screen when edited (merge response with calendars.*)
-- [ ] calendar editing css borders and dark mode
-- [ ] date/time formatting
+- [ ] test and improve question editor
+     - [ ] fix followups
+     - [ ] layout
+     - [ ] saving / disabled
+     - [ ] !q.active / strikethrough
+     - [ ] <option>text</option> selected by default
+     - [ ] are public responses shown anywhere? for user/proposal/venue
+     - [ ] try various field types, choices
+     - [ ] what about orphaned followups?
 
 ## Improvements
 
@@ -37,15 +53,6 @@
 - [ ] combine user2 into user1 (set user1.id on proposals/venues/... and deactivate user2)
     - [ ] admin/organizer select user on proposal-edit?
 - [ ] content security policy?
-- [ ] test and improve question editor
-     - [ ] try various field types, choices
-     - [ ] try followups
-     - [ ] layout
-     - [ ] saving / disabled
-     - [ ] !q.active / strikethrough
-     - [ ] <option>text</option> selected by default
-     - [ ] what about orphaned followups?
-     - [ ] are public responses shown anywhere? for user/proposal/venue
 - [ ] proposal visibility to other users?
 - [ ] venue visibility to other users?
 - [ ] proposal website link

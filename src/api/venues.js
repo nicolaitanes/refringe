@@ -5,6 +5,7 @@ import { CalendarsDB } from './calendars.js';
 import { logged, pgdb } from './pgdb.js';
 import { QuestionsDB } from './questions.js';
 import { renderTemplate } from './templates.js';
+import { writeLocalJsonDates } from './time.js';
 
 const upload = multer();
 
@@ -91,7 +92,7 @@ router.get('/', async (req, res) => {
     await Promise.all(venues.map(async v => {
         v.questions = await questionsDB.listAnswers({ venueid: v.id });
     }));
-    return renderTemplate({ template: 'venues', venues })(req, res);
+    return renderTemplate(writeLocalJsonDates({ template: 'venues', venues }))(req, res);
 });
 
 router.get('/:id', async (req, res) => {
@@ -148,6 +149,7 @@ router.post('/:id', async (req, res) => {
     const venuesDB = new VenuesDB(req);
     try {
         const venue = parseVenue(req.body);
+        if (req.auth.l > 10 && req.auth.u !== venue.userid) return res.status(403).send('Forbidden');
         await venuesDB.update(req.params.id, venue);
 
         const answers = await questionsDB.listAnswers({ venueid: req.params.id });
