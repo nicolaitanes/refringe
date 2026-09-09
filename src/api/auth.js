@@ -1,6 +1,6 @@
 import { renderTemplate } from './templates.js';
-import { questionsDB } from './questions.js';
-import { usersDB } from './users.js';
+import { QuestionsDB } from './questions.js';
+import { UsersDB } from './users.js';
 import multer from 'multer';
 
 const upload = multer();
@@ -54,6 +54,7 @@ export const initAuth = app => {
                 
                 if (!auth?.d || (auth.d + 5 * 60 * 1000) < new Date().getTime()) {
                     try {
+                        const usersDB = new UsersDB(req);
                         const user = await usersDB.getByID(auth.u);
                         if (!user || user.revocation > auth.r) return res.redirect(303, '/logout');
                         req.auth = issueCookie(req, res, auth);
@@ -79,6 +80,7 @@ export const initAuth = app => {
     app.post('/auth', upload.none(), async (req, res) => {
         if (!req.body.password) return res.redirect(303, '/login');
         
+        const usersDB = new UsersDB(req);
         const user = await usersDB.getByName(req.body.username, req.body.password);
         if (!user?.active) return res.redirect(303, '/login');
         
@@ -92,6 +94,7 @@ export const initAuth = app => {
     });
     
     app.post('/revoke', async (req, res) => {
+        const usersDB = new UsersDB(req);
         req.auth.r = await usersDB.revokeOtherDevices(req.auth.u);
         issueCookie(req, res, req.auth);
         res.redirect(303, '/menu');
@@ -115,11 +118,13 @@ export const initAuth = app => {
     // TODO update revocation on user password change
     
     app.get('/welcome', async (req, res) => {
+        const usersDB = new UsersDB(req);
         if (await usersDB.count()) return res.redirect(303, '/login');
         return renderTemplate({ template: 'welcome' })(req, res);
     });
     
     app.post('/setup', upload.none(), async (req, res) => {
+        const usersDB = new UsersDB(req);
         if (await usersDB.count()) return res.redirect(303, '/login');
         const roleid = await usersDB.findRoleID(0);
         const user = await usersDB.create({
@@ -141,6 +146,8 @@ export const initAuth = app => {
     
     app.get('/users', async (req, res) => {
         if (req.auth.l > 10) return res.status(403).send('Forbidden');
+        const usersDB = new UsersDB(req);
+        const questionsDB = new QuestionsDB(req);
         const users = await usersDB.list();
         for (const u of users) {
             u.role = u.level === 0 ? 'Admin' : u.level === 10 ? 'Organizer' : 'Proposer';
@@ -154,6 +161,8 @@ export const initAuth = app => {
     });
     
     app.get('/user/:id', async (req, res) => {
+        const usersDB = new UsersDB(req);
+        const questionsDB = new QuestionsDB(req);
         const user = await usersDB.getByID(req.params.id);
         if (!user) return res.status(404).send('Not found');
         const roles = await usersDB.listRoles();
@@ -172,6 +181,8 @@ export const initAuth = app => {
     });
     
     app.post('/user', upload.none(), async (req, res) => {
+        const usersDB = new UsersDB(req);
+        const questionsDB = new QuestionsDB(req);
         const questions = await questionsDB.list({ active: true, foruser: true });
         const renderError = message => renderTemplate({
             message,
@@ -181,7 +192,7 @@ export const initAuth = app => {
             answers: questions.map(q => ({ ...q, answer: req.body[q.fieldname] }))
         })(req, res);
 
-        pgdb.logEvent('signup', req.body);
+        pgdb.logEvent(req.auth.u, 'signup', req.body);
         
         if (req.body.robot !== 'decal') return renderError('Are you a robot?');
 
@@ -225,6 +236,8 @@ export const initAuth = app => {
         const id = req.params.id ?? null;
         if (req.auth.l > 0 && id !== req.auth.u) return res.status(403).send('Forbidden');
         
+        const usersDB = new UsersDB(req);
+        const questionsDB = new QuestionsDB(req);
         const isAdmin = req.body.id !== req.auth.u; // meaning here: administering another user -- can't change own roleid or active
         const answers = await questionsDB.listAnswers({ userid: id });
         const roles = await usersDB.listRoles();

@@ -26,6 +26,7 @@ const logDB = open({
 logDB.then(logdb => logdb.run(`
   create table if not exists events (
     id integer primary key,
+    userid uuid,
     op text,
     tblid text,
     tbl text,
@@ -34,39 +35,45 @@ logDB.then(logdb => logdb.run(`
   )
 `));
 
-pgdb.logEvent = async (op, context, tbl=null, sql=null, id=null) => {
+pgdb.logEvent = async (userid, op, context, tbl=null, sql=null, id=null) => {
     const jsonContext = JSON.stringify(context, null, 2);
     console.log(`${op} ${tbl}\n${jsonContext}\n`);
-    (await logDB).run(SQL`insert into events (op, tblid, tbl, sql, context) values (${op}, ${id}, ${tbl}, ${sql?.text}, ${jsonContext})`);
+    (await logDB).run(SQL`insert into events (userid, op, tblid, tbl, sql, context) values (${userid}, ${op}, ${id}, ${tbl}, ${sql?.text}, ${jsonContext})`);
 };
 
-pgdb.add = async (tbl, context, q) => {
-    await pgdb.logEvent('I', context, tbl, q);
-    const result = await pgdb.query(q);
-    return result.rows[0];
-};
-
-pgdb.update = async (tbl, id, context, q) => {
-    await pgdb.logEvent('U', { ...context, id }, tbl, q, id);
-    const result = await pgdb.query(q);
-    return result.rows[0];
-};
-
-pgdb.upsert = async (tbl, context, q) => {
-    await pgdb.logEvent('P', context, tbl, q);
-    const result = await pgdb.query(q);
-    return result.rows[0];
-};
-
-pgdb.delete = async (tbl, id, q, context) => {
-    if (!context && id && !Array.isArray(id)) {
-        const query = SQL`select *`;
-        query.append(` from ${tbl}`);
-        query.append(SQL` where id=${id}`);
-        context = await pgdb.query(query);
+export const logged = req => ({
+    add: async (tbl, context, q) => {
+        await pgdb.logEvent(req.auth?.u ?? null, 'I', context, tbl, q);
+        const result = await pgdb.query(q);
+        return result.rows[0];
+    },
+    update: async (tbl, id, context, q) => {
+        await pgdb.logEvent(req.auth?.u ?? null, 'U', { ...context, id }, tbl, q, id);
+        const result = await pgdb.query(q);
+        return result.rows[0];
+    },
+    upsert: async (tbl, context, q) => {
+        await pgdb.logEvent(req.auth?.u ?? null, 'P', context, tbl, q);
+        const result = await pgdb.query(q);
+        return result.rows[0];
+    },
+    delete: async (tbl, id, q, context) => {
+        if (!context && id && !Array.isArray(id)) {
+            const query = SQL`select *`;
+            query.append(` from ${tbl}`);
+            query.append(SQL` where id=${id}`);
+            context = await pgdb.query(query);
+        }
+        await pgdb.logEvent(req.auth?.u ?? null, 'D', context ?? { id }, tbl, q, id);
+        if (q) await pgdb.query(q);
     }
-    await pgdb.logEvent('D', context ?? { id }, tbl, q, id);
-    if (q) await pgdb.query(q);
+});
+
+export const powerless = {
+    add: async (tbl, context, q) => context,
+    update: async (tbl, id, context, q) => context,
+    upsert: async (tbl, context, q) => context,
+    delete: async (tbl, id, q, context) => {}
 };
 
 for (const tbl of ['migrations', 'seeds']) {

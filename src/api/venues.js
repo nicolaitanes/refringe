@@ -1,14 +1,17 @@
 import express from 'express';
 import multer from 'multer';
 import SQL from 'sql-template-strings'
-import { calendarsDB } from './calendars.js';
-import { pgdb } from './pgdb.js';
-import { questionsDB } from './questions.js';
+import { CalendarsDB } from './calendars.js';
+import { logged, pgdb } from './pgdb.js';
+import { QuestionsDB } from './questions.js';
 import { renderTemplate } from './templates.js';
 
 const upload = multer();
 
-export const venuesDB = {
+export class VenuesDB {
+    constructor(req) {
+        this.logged = logged(req);
+    }
     async list(q) {
         const query = SQL`select v.* from venues v where 1=1`;
         if (q.active) query.append(SQL` and v.active = true`);
@@ -16,20 +19,20 @@ export const venuesDB = {
         query.append(SQL` order by v.name`);
         const result = await pgdb.query(query);
         return result.rows;
-    },
+    }
     async get(id) {
         const result = await pgdb.query(SQL`select * from venues where id = ${id}`);
         return result.rows[0];
-    },
+    }
     async add(q) {
-        return await pgdb.add('venues', q, SQL`insert into venues (
+        return await this.logged.add('venues', q, SQL`insert into venues (
             userid, active, name, allcalendars, address, city, state, zip, latitude, longitude, phone, email, website
         ) values (
             ${q.userid}, ${q.active || true}, ${q.name?.trim()}, ${!!q.allcalendars}, ${q.address?.trim()}, ${q.city?.trim()}, ${q.state?.trim()}, ${q.zip?.trim()}, ${q.latitude || null}, ${q.longitude || null}, ${q.phone?.trim()}, ${q.email?.trim()}, ${q.website?.trim()}
         ) returning *`);
-    },
+    }
     async update(id, q) {
-        return await pgdb.update('venues', id, q, SQL`update venues set
+        return await this.logged.update('venues', id, q, SQL`update venues set
                 active = ${!!q.active},
                 name = ${q.name.trim()},
                 allcalendars = ${!!q.allcalendars},
@@ -45,7 +48,7 @@ export const venuesDB = {
                 updated = now()
             where id=${id}`
         );
-    },
+    }
 };
 
 function parseVenue(body) {
@@ -71,12 +74,16 @@ router.use(express.json()); // body can be json
 router.use(upload.none());  // or multipart form data
 
 router.get('/new', async (req, res) => {
+    const calendarsDB = new CalendarsDB(req);
+    const questionsDB = new QuestionsDB(req);
     const questions = await questionsDB.list({ active: true, forvenue: true });
     const events = await calendarsDB.list({ active: true, current: true });
     return renderTemplate({ template: 'venue-new', questions, events })(req, res);
 });
 
 router.get('/', async (req, res) => {
+    const questionsDB = new QuestionsDB(req);
+    const venuesDB = new VenuesDB(req);
     const venues = await venuesDB.list({
         ...req.query
     });
@@ -88,6 +95,9 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
+    const calendarsDB = new CalendarsDB(req);
+    const questionsDB = new QuestionsDB(req);
+    const venuesDB = new VenuesDB(req);
     const venue = await venuesDB.get(req.params.id);
     if (!venue) return res.status(404).send('Not Found');
     if (!req.auth || (req.auth.l > 10 && req.auth.u !== venue.userid)) return res.status(403).send('Forbidden');
@@ -100,6 +110,9 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
+    const calendarsDB = new CalendarsDB(req);
+    const questionsDB = new QuestionsDB(req);
+    const venuesDB = new VenuesDB(req);
     try {
         const venue = parseVenue(req.body);
         if (!venue.name) return res.status(400).send('Name is required');
@@ -130,6 +143,9 @@ router.post('/', async (req, res) => {
 });
 
 router.post('/:id', async (req, res) => {
+    const calendarsDB = new CalendarsDB(req);
+    const questionsDB = new QuestionsDB(req);
+    const venuesDB = new VenuesDB(req);
     try {
         const venue = parseVenue(req.body);
         await venuesDB.update(req.params.id, venue);

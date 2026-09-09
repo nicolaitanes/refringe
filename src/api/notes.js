@@ -1,9 +1,12 @@
 import express from 'express';
 import SQL from 'sql-template-strings'
-import { pgdb } from './pgdb.js';
+import { logged, pgdb } from './pgdb.js';
 import { renderTemplate } from './templates.js';
 
-export const notesDB = {
+export class NotesDB {
+    constructor(req) {
+        this.logged = logged(req);
+    }
     async list(q) {
         const query = SQL`select n.*, proposalid, showid, userid, venueid, u.fullname, uuid_extract_timestamp(n.id) as created
                           from notes n join users u on n.created_by_userid = u.id
@@ -24,32 +27,32 @@ export const notesDB = {
         query.append(SQL` order by n.id desc`);
         const result = await pgdb.query(query);
         return result.rows;
-    },
+    }
     async get(id) {
         const result = await pgdb.query(SQL`select * from notes where id = ${id}`);
         return result.rows[0];
-    },
+    }
     async add(q) {
-        const note = await pgdb.add('notes', q, SQL`insert into notes (content, is_visible_to_organizers, is_visible_to_proposers, is_visible_to_public, created_by_userid) values (${q.content || ''}, ${!!q.is_visible_to_organizers}, ${!!q.is_visible_to_proposers}, ${!!q.is_visible_to_public}, ${q.created_by_userid}) returning *`);
+        const note = await this.logged.add('notes', q, SQL`insert into notes (content, is_visible_to_organizers, is_visible_to_proposers, is_visible_to_public, created_by_userid) values (${q.content || ''}, ${!!q.is_visible_to_organizers}, ${!!q.is_visible_to_proposers}, ${!!q.is_visible_to_public}, ${q.created_by_userid}) returning *`);
         if (q.proposalid) {
             const link = { noteid: note.id, proposalid: q.proposalid };
-            await pgdb.add('notes_proposals', link, SQL`insert into notes_proposals (noteid, proposalid) values (${link.noteid}, ${q.proposalid}) returning *`);
+            await this.logged.add('notes_proposals', link, SQL`insert into notes_proposals (noteid, proposalid) values (${link.noteid}, ${q.proposalid}) returning *`);
             note.proposalid = q.proposalid;
         } if (q.showid) {
             const link = { noteid: note.id, showid: q.showid };
-            await pgdb.add('notes_shows', link, SQL`insert into notes_shows (noteid, showid) values (${link.noteid}, ${q.showid}) returning *`);
+            await this.logged.add('notes_shows', link, SQL`insert into notes_shows (noteid, showid) values (${link.noteid}, ${q.showid}) returning *`);
             note.showid = q.showid;
         } if (q.userid) {
             const link = { noteid: note.id, userid: q.userid };
-            await pgdb.add('notes_users', link, SQL`insert into notes_users (noteid, userid) values (${link.noteid}, ${q.userid}) returning *`);
+            await this.logged.add('notes_users', link, SQL`insert into notes_users (noteid, userid) values (${link.noteid}, ${q.userid}) returning *`);
             note.userid = q.userid;
         } if (q.venueid) {
             const link = { noteid: note.id, venueid: q.venueid };
-            await pgdb.add('notes_venues', link, SQL`insert into notes_venues (noteid, venueid) values (${link.noteid}, ${q.venueid}) returning *`);
+            await this.logged.add('notes_venues', link, SQL`insert into notes_venues (noteid, venueid) values (${link.noteid}, ${q.venueid}) returning *`);
             note.venueid = q.venueid;
         }
         return note;
-    },
+    }
     async update(id, q) {
         const query = SQL`update notes set updated=now()`;
         if ('content' in q) query.append(SQL`, content=${content}`);
@@ -58,14 +61,14 @@ export const notesDB = {
         if ('is_visible_to_public' in q) query.append(SQL`, is_visible_to_public = ${!!q.is_visible_to_public}`);
         if ('is_hidden' in q) query.append(SQL`, is_hidden = ${!!q.is_hidden}`);
         query.append(SQL` where id=${id} returning *`);
-        return await pgdb.update('notes', id, q, query);
-    },
+        return await this.logged.update('notes', id, q, query);
+    }
     async delete(id) {
-        await pgdb.delete('notes_proposals', [id], SQL`delete from notes_proposals where noteid = ${id}`, { noteid: id });
-        await pgdb.delete('notes_shows', [id], SQL`delete from notes_shows where noteid = ${id}`, { noteid: id });
-        await pgdb.delete('notes_users', [id], SQL`delete from notes_users where noteid = ${id}`, { noteid: id });
-        await pgdb.delete('notes_venues', [id], SQL`delete from notes_venues where noteid = ${id}`, { noteid: id });
-        await pgdb.delete('notes', id);
+        await this.logged.delete('notes_proposals', [id], SQL`delete from notes_proposals where noteid = ${id}`, { noteid: id });
+        await this.logged.delete('notes_shows', [id], SQL`delete from notes_shows where noteid = ${id}`, { noteid: id });
+        await this.logged.delete('notes_users', [id], SQL`delete from notes_users where noteid = ${id}`, { noteid: id });
+        await this.logged.delete('notes_venues', [id], SQL`delete from notes_venues where noteid = ${id}`, { noteid: id });
+        await this.logged.delete('notes', id);
     }
 };
 
@@ -74,6 +77,7 @@ router.use(express.json());
 
 router.get('/', async (req, res) => {
     const q = { ...req.query, level: req.auth.l };
+    const notesDB = new NotesDB(req);
     const notes = await notesDB.list(q);
     return res.json({ notes });
 });
@@ -82,6 +86,7 @@ router.post('/', async (req, res) => {
     try {
         const q = { ...req.body, created_by_userid: req.auth.u };
         if (!req.auth || req.auth.l > 10) q.is_visible_to_public = false;
+        const notesDB = new NotesDB(req);
         const note = await notesDB.add(q);
         return res.json(note);
     } catch (err) {
@@ -94,6 +99,7 @@ router.put('/:id', async (req, res) => {
     try {
         const note = await notesDB.get(req.params.id);
         if (req.auth?.u !== note.created_by_userid) return res.status(403).send('Forbidden');
+        const notesDB = new NotesDB(req);
         const newNote = await notesDB.update(req.params.id, req.body);
         return res.json(newNote);
     } catch (err) {
@@ -106,6 +112,7 @@ router.delete('/:id', async(req, res) => {
     try {
         const note = await notesDB.get(req.params.id);
         if (!req.auth || !(req.auth.u === note.created_by_userid || req.auth.l <= 10)) return res.status(403).send('Forbidden');
+        const notesDB = new NotesDB(req);
         await notesDB.delete(req.params.id);
         return res.status(204).send();
     } catch (err) {

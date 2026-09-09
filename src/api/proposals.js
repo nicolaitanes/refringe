@@ -1,14 +1,17 @@
 import express from 'express';
 import multer from 'multer';
 import SQL from 'sql-template-strings'
-import { calendarsDB } from './calendars.js';
-import { pgdb } from './pgdb.js';
-import { questionsDB } from './questions.js';
+import { CalendarsDB } from './calendars.js';
+import { logged, pgdb } from './pgdb.js';
+import { QuestionsDB } from './questions.js';
 import { renderTemplate } from './templates.js';
 
 const upload = multer();
 
-export const proposalsDB = {
+export class ProposalsDB {
+    constructor(req) {
+        this.logged = logged(req);
+    }
     async list(q) {
         const query = SQL`select p.*, u.fullname from proposals p join users u on p.userid = u.id where u.active = true`;
         if (q.active) query.append(SQL` and p.active = true`);
@@ -16,20 +19,20 @@ export const proposalsDB = {
         query.append(SQL` order by p.id desc`);
         const result = await pgdb.query(query);
         return result.rows;
-    },
+    }
     async get(id) {
         const result = await pgdb.query(SQL`select * from proposals where id = ${id}`);
         return result.rows[0];
-    },
+    }
     async add(q) {
-        return await pgdb.add('proposals', q, SQL`insert into proposals (
+        return await this.logged.add('proposals', q, SQL`insert into proposals (
             userid, title, stagename, allcalendars, active
         ) values (
             ${q.userid}, ${q.title?.trim()}, ${q.stagename || null}, ${!!q.allcalendars}, ${q.active || true}
         ) returning *`);
-    },
+    }
     async update(id, q) {
-        return await pgdb.update('proposals', id, q, SQL`update proposals set
+        return await this.logged.update('proposals', id, q, SQL`update proposals set
                 title = ${q.title?.trim()},
                 stagename = ${q.stagename?.trim()},
                 allcalendars = ${!!q.allcalendars},
@@ -37,7 +40,7 @@ export const proposalsDB = {
                 updated = now()
             where id=${id}`
         );
-    },
+    }
 };
 
 function parseProposal(body) {
@@ -56,12 +59,16 @@ router.use(express.json()); // body can be json
 router.use(upload.none());  // or multipart form data
 
 router.get('/new', async (req, res) => {
+    const calendarsDB = new CalendarsDB(req);
+    const questionsDB = new QuestionsDB(req);
     const questions = await questionsDB.list({ active: true, forproposal: true });
     const events = await calendarsDB.list({ active: true, current: true });
     return renderTemplate({ template: 'proposal-new', questions, events })(req, res);
 });
 
 router.get('/', async (req, res) => {
+    const calendarsDB = new CalendarsDB(req);
+    const proposalsDB = new ProposalsDB(req);
     const proposals = await proposalsDB.list({
         active: true,
         ...req.query
@@ -75,6 +82,9 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
+    const calendarsDB = new CalendarsDB(req);
+    const proposalsDB = new ProposalsDB(req);
+    const questionsDB = new QuestionsDB(req);
     const proposal = await proposalsDB.get(req.params.id);
     if (!proposal) return res.status(404).send('Not Found');
     if (!req.auth || (req.auth.l > 10 && req.auth.u !== proposal.userid)) return res.status(403).send('Forbidden');
@@ -87,8 +97,11 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
+    const calendarsDB = new CalendarsDB(req);
+    const proposalsDB = new ProposalsDB(req);
+    const questionsDB = new QuestionsDB(req);
     try {
-        pgdb.logEvent('proposal', req.body);
+        pgdb.logEvent(req.auth.u, 'proposal', req.body);
         
         const proposal = parseProposal(req.body);
         const newProposal = await proposalsDB.add({ ...proposal, userid: req.auth.u });
@@ -116,8 +129,11 @@ router.post('/', async (req, res) => {
 });
 
 router.post('/:id', async (req, res) => {
+    const calendarsDB = new CalendarsDB(req);
+    const proposalsDB = new ProposalsDB(req);
+    const questionsDB = new QuestionsDB(req);
     try {
-        pgdb.logEvent('proposal edit', req.body);
+        pgdb.logEvent(req.auth.u, 'proposal edit', req.body);
         const proposal = parseProposal(req.body);
         await proposalsDB.update(req.params.id, proposal);
 

@@ -2,8 +2,6 @@
 
 ## Features
 
-- [ ] schedule (by day/venue/..., adapt from old project)
-- [ ] venue map (adapt from old project)
 - [ ] iframeable monthly fullcalendar, in seeded / and /cur-events/
     - include public callforwork deadlines
 - [ ] schedule preview/admin tools
@@ -13,11 +11,15 @@
     - [ ] venues to creator
     - [ ] email a single proposer, e.g. draft schedule, when status changes, etc.
     - [ ] mass email to proposers on a calendar
+    
+## Fix
+
+- [ ] calendars/ item disappears from screen when edited (merge response with calendars.*)
+- [ ] calendar editing css borders and dark mode
+- [ ] date/time formatting
 
 ## Improvements
 
-- [ ] calendar-edit layout and dark mode
-- [ ] clean up date/time formatting
 - [ ] cancelled shows
     - [ ] by calendars_proposals.status
     - [ ] by show.iscancelled

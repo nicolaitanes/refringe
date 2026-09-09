@@ -1,8 +1,8 @@
 import express from 'express';
 import showdown from 'showdown';
 import SQL from 'sql-template-strings'
-import { pgdb } from './pgdb.js';
-import { proposalsDB } from './proposals.js';
+import { logged, pgdb } from './pgdb.js';
+import { ProposalsDB } from './proposals.js';
 import { renderTemplate } from './templates.js';
 import { tmplJsonFields } from './time.js';
 
@@ -14,7 +14,10 @@ export const markdownConverter = new showdown.Converter({
     simpleLineBreaks: true,
 });
 
-export const questionsDB = {
+export class QuestionsDB {
+    constructor(req) {
+        this.logged = logged(req);
+    }
     async list(q) {
         const whereParts = [];
         const query = SQL`select * from questions where 1=1`;
@@ -30,18 +33,18 @@ export const questionsDB = {
             isTextarea: a.fieldtype === 'textarea',
             isYesno: a.fieldtype === 'yesno'
         }));
-    },
+    }
     async add(q) {
-        return await pgdb.add('questions', q, SQL`insert into questions (
+        return await this.logged.add('questions', q, SQL`insert into questions (
             required, ispublic, parentid, forproposal, foruser, forvenue, priority,
             fieldname, fieldtype, choices, pattern, question
         ) values (
             ${q.required || false}, ${q.ispublic || false}, ${q.parentid || null}, ${q.forproposal || false}, ${q.foruser || false}, ${q.forvenue || false}, ${q.priority || 0},
             ${q.fieldname}, ${q.fieldtype}, ${q.choices || null}, ${q.pattern || null}, ${q.question}
         ) returning *`);
-    },
+    }
     async update(id, q) {
-        return await pgdb.update('questions', id, q, SQL`update questions set
+        return await this.logged.update('questions', id, q, SQL`update questions set
         active = ${q.active},
         required = ${q.required},
         ispublic = ${q.ispublic},
@@ -55,7 +58,7 @@ export const questionsDB = {
         pattern = ${q.pattern},
         question = ${q.question}
         where id=${id}`);
-    },
+    }
     async listAnswers(q) {
         const result =
             q.proposalid ? await pgdb.query(SQL`select * from questions q left outer join proposalanswers a on a.questionid = q.id and a.proposalid = ${q.proposalid} where q.active and q.forproposal order by priority, fieldname`) :
@@ -72,17 +75,17 @@ export const questionsDB = {
             userid: q.userid,
             venueid: q.venueid
         }));
-    },
+    }
     async addOrUpdateAnswer(q) {
         if (!q.questionid) return;
         if (q.proposalid) {
-            await pgdb.upsert('proposalanswers', q, SQL`insert into proposalanswers (questionid, proposalid, answer) values (${q.questionid}, ${q.proposalid}, ${q.answer || ''})
+            await this.logged.upsert('proposalanswers', q, SQL`insert into proposalanswers (questionid, proposalid, answer) values (${q.questionid}, ${q.proposalid}, ${q.answer || ''})
                 on conflict (questionid, proposalid) do update set answer = excluded.answer`);
         } else if (q.userid) {
-            await pgdb.upsert('useranswers', q, SQL`insert into useranswers (questionid, userid, answer) values (${q.questionid}, ${q.userid}, ${q.answer || ''})
+            await this.logged.upsert('useranswers', q, SQL`insert into useranswers (questionid, userid, answer) values (${q.questionid}, ${q.userid}, ${q.answer || ''})
                 on conflict (questionid, userid) do update set answer = excluded.answer`);
         } else if (q.venueid) {
-            await pgdb.upsert('venueanswers', q, SQL`insert into venueanswers (questionid, venueid, answer) values (${q.questionid}, ${q.venueid}, ${q.answer || ''})
+            await this.logged.upsert('venueanswers', q, SQL`insert into venueanswers (questionid, venueid, answer) values (${q.questionid}, ${q.venueid}, ${q.answer || ''})
                 on conflict (questionid, venueid) do update set answer = excluded.answer`);
         }
     }
@@ -133,6 +136,7 @@ export const router = express.Router();
 router.use(express.json());
 
 router.get('/', async (req, res) => {
+    const questionsDB = new QuestionsDB(req);
     const questions = nestQuestions(await questionsDB.list(req.query));
     if (req.headers.accept?.includes('application/json')) return res.json({ questions });
     return renderTemplate(tmplJsonFields({ template: 'questions', questions }))(req, res);
@@ -140,6 +144,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
     if (!req.auth || req.auth.l > 10) return res.status(403).send('Forbidden');
+    const questionsDB = new QuestionsDB(req);
     try {
         const q = parseQuestion(req.body);
         const newQ = await questionsDB.add(q);
@@ -152,6 +157,7 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
     if (!req.auth || req.auth.l > 10) return res.status(403).send('Forbidden');
+    const questionsDB = new QuestionsDB(req);
     try {
         const q = parseQuestion(req.body);
         await questionsDB.update(req.params.id, q);
@@ -163,22 +169,27 @@ router.put('/:id', async (req, res) => {
 });
 
 router.get('/proposal/:id', async (req, res) => {
+    const questionsDB = new QuestionsDB(req);
     const answers = nestQuestions(await questionsDB.listAnswers({ proposalid: req.params.id }));
     res.json({ answers });
 });
 
 router.get('/user/:id', async (req, res) => {
     if (!req.auth || (req.auth.l > 10 && req.auth.u !== req.params.id)) return res.status(403).send('Forbidden');
+    const questionsDB = new QuestionsDB(req);
     const answers = nestQuestions(await questionsDB.listAnswers({ userid: req.params.id }));
     res.json({ answers });
 });
 
 router.get('/venue/:id', async (req, res) => {
+    const questionsDB = new QuestionsDB(req);
     const answers = nestQuestions(await questionsDB.listAnswers({ venueid: req.params.id }));
     res.json({ answers });
 });
 
 router.post('/proposal/:id', async(req, res) => {
+    const proposalsDB = new ProposalsDB(req);
+    const questionsDB = new QuestionsDB(req);
     const proposal = await proposalsDB.get(req.params.id);
     if (!proposal) return res.status(404).send('Not Found');
     if (!req.auth || (req.auth.l > 10 && req.auth.u !== proposal.userid)) return res.status(403).send('Forbidden');
@@ -193,6 +204,7 @@ router.post('/proposal/:id', async(req, res) => {
 router.post('/user/:id', async (req, res) => {
     if (!req.auth || (req.auth.l > 10 && req.auth.u !== req.params.id)) return res.status(403).send('Forbidden');
     if (!req.body.questionid) return res.status(400).send('Bad Request');
+    const questionsDB = new QuestionsDB(req);
     await questionsDB.addOrUpdateAnswer({
         questionid: req.body.questionid,
         userid: req.params.id,
@@ -202,6 +214,8 @@ router.post('/user/:id', async (req, res) => {
 });
 
 router.post('/venue/:id', async(req, res) => {
+    const questionsDB = new QuestionsDB(req);
+    const venuesDB = new VenuesDB(req);
     const venue = await venuesDB.get(req.params.id);
     if (!venue) return res.status(404).send('Not Found');
     if (!req.auth || (req.auth.l > 10 && req.auth.u !== venue.userid)) return res.status(403).send('Forbidden');

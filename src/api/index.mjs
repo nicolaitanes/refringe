@@ -10,13 +10,12 @@ import { router as calendars } from './calendars.js';
 import { router as notes } from './notes.js';
 import { pgdb } from './pgdb.js';
 import { router as pages, renderPage } from './pages.js';
-import { router as proposals, proposalsDB } from './proposals.js';
+import { router as proposals, ProposalsDB } from './proposals.js';
 import { router as questions, markdownConverter } from './questions.js';
 import { router as tags } from './tags.js';
 import { initTemplates, renderTemplate } from './templates.js';
 import { localJsonDates } from './time.js';
-import { usersDB } from './users.js';
-import { router as venues, venuesDB } from './venues.js';
+import { router as venues, VenuesDB } from './venues.js';
 
 const args = yargs.option('verbose', {
     alias: 'v',
@@ -43,6 +42,8 @@ app.use(localJsonDates);
 initAuth(app);
 
 app.get('/menu', async (req, res) => {
+    const proposalsDB = new ProposalsDB(req);
+    const venuesDB = new VenuesDB(req);
     const proposals = await proposalsDB.list({ active: true, userid: req.auth?.u });
     const venues = await venuesDB.list({ active: true, userid: req.auth?.u });
     renderTemplate({ template: 'menu', proposals, venues })(req, res);
