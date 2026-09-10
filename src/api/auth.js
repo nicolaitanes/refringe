@@ -194,7 +194,7 @@ export const initAuth = app => {
             answers: nestQuestions(questions.map(q => ({ ...q, answer: req.body[q.fieldname] })))
         })(req, res);
 
-        pgdb.logEvent(req.auth.u, 'signup', req.body);
+        pgdb.logEvent(req.auth?.u, 'signup', req.body);
         
         if (req.body.robot !== 'decal') return renderError('Are you a robot?');
 

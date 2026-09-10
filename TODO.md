@@ -16,7 +16,6 @@
 
 ## Fix/Test
 
-- [ ] testuser09 profile's email and zip are wacky! `{"",""}`
 - [ ] answer editing for yes/no questions
 - [ ] question editor
      - [ ] saving / disabled
