@@ -16,6 +16,8 @@
 
 ## Fix/Test
 
+- [ ] testuser09 profile's email and zip are wacky! `{"",""}`
+- [ ] answer editing for yes/no questions
 - [ ] question editor
      - [ ] saving / disabled
      - [ ] <option>text</option> selected by default
@@ -26,6 +28,9 @@
 
 ## Improvements
 
+- [ ] timestamps in event log
+- [ ] replace password with passhash (or just redact?) in event log?
+- [ ] markdown instructions / cheat sheet link (pages, question[type="textarea"])
 - [ ] "my calendar" at bottom of menu
 - [ ] cancelled shows
     - [ ] by calendars_proposals.status
