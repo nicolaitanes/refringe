@@ -1,5 +1,5 @@
 import { renderTemplate } from './templates.js';
-import { QuestionsDB } from './questions.js';
+import { nestQuestions, QuestionsDB } from './questions.js';
 import { writeLocalJsonDates } from './time.js';
 import { UsersDB } from './users.js';
 import multer from 'multer';
@@ -156,7 +156,7 @@ export const initAuth = app => {
             u.email = u.email || '';
         }
         await Promise.all(users.map(async u => {
-            u.questions = await questionsDB.listAnswers({ userid: u.id });
+            u.questions = nestQuestions(await questionsDB.listAnswers({ userid: u.id }));
         }));
         return renderTemplate(writeLocalJsonDates({ users, template: 'users' }))(req, res);
     });
@@ -167,7 +167,7 @@ export const initAuth = app => {
         const user = await usersDB.getByID(req.params.id);
         if (!user) return res.status(404).send('Not found');
         const roles = await usersDB.listRoles();
-        const answers = await questionsDB.listAnswers({ userid: user.id });
+        const answers = nestQuestions(await questionsDB.listAnswers({ userid: user.id }));
         const isSelf = req.params.id === req.auth.u;
         const canEdit = req.auth.l === 0 || isSelf;
         return renderTemplate({
@@ -190,7 +190,7 @@ export const initAuth = app => {
             severity: 'error',
             template: 'signup',
             user: req.body,
-            answers: questions.map(q => ({ ...q, answer: req.body[q.fieldname] }))
+            answers: nestQuestions(questions.map(q => ({ ...q, answer: req.body[q.fieldname] })))
         })(req, res);
 
         pgdb.logEvent(req.auth.u, 'signup', req.body);
@@ -252,7 +252,7 @@ export const initAuth = app => {
                 isAdmin,
                 user,
                 roles,
-                answers: answers.map(q => ({ ...q, answer: req.body[q.fieldname] }))
+                answers: nestQuestions(answers.map(q => ({ ...q, answer: req.body[q.fieldname] })))
             })(req, res);
         };
         

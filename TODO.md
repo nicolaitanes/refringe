@@ -2,9 +2,8 @@
 
 ## Deploy test site
 
-- [x] nginx conf
+- [x] publish to github: https://github.com/nicolaitanes/refringe
 - [ ] dns for refringe.mandelics.com
-- [ ] publish to github
 - [ ] clone sxs with mandelics-site
 - [ ] deploy mandelics-site/docker-compose with customizations
 
@@ -24,15 +23,13 @@
 
 ## Fix/Test
 
-- [ ] test and improve question editor
-     - [ ] fix followups
-     - [ ] layout: nest followups
+- [ ] question editor
      - [ ] saving / disabled
-     - [ ] !q.active / strikethrough
      - [ ] <option>text</option> selected by default
      - [ ] are public responses shown anywhere? for user/proposal/venue
      - [ ] try various field types, choices
      - [ ] what about orphaned followups?
+- [ ] better breadcrumbs header
 
 ## Improvements
 
@@ -44,7 +41,6 @@
 - [ ] "upcoming event" status prior to publishing event schedule
 - [ ] caching and SSR for public event schedules
 - [ ] capture venue lat/long on map
-- [ ] better breadcrumbs
 - [ ] links from calendar-detail
 - [ ] proposal/venue calendars status: choices / editing / filtering
 - [ ] All Proposals: include inactive ones

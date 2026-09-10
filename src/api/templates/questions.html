@@ -1,12 +1,18 @@
 {{> header title="Edit Questions" sitename=sitename opengraph=opengraph }}
 {{> breadcrumb title="Edit Questions" }}
 
+<style>
+  .question.inactive .question-text {
+      text-decoration: line-through;
+  }
+</style>
+
 <div class="ma1 question-mgt">
     <template v-for="section of sections">
         <div class="section">
             <h2>[[ section.title ]]</h2>
             <template v-for="q of section.questions">
-                <div class="question">
+                <div :class="{ question : true, inactive: !q.active }">
                     <div class="question-text">
                         [[ q.required ? '*' : '' ]][[ q.question ]]
                     </div>
@@ -55,6 +61,57 @@
                       <button @click="saveNewQuestion(section.key, q)">Save</button>
                       <button @click="q.adding = false">Cancel</button>
                     </div>
+                    <template v-for="qq of q.children">
+                      <div class="question ml2 pa1" :class="{ inactive: !qq.active }">
+                        <div class="question-text">
+                          [[ qq.required ? '*' : '' ]][[ qq.question ]]
+                        </div>
+                        <div class="question-controls">
+                          <button @click="editQuestion(qq)">Edit</button>
+                        </div>
+                        <div v-if="qq.editing" class="question-edit">
+                          <div class="formfields">
+                            <label class="twofields"><input type="checkbox" v-model="qq.newActive"> Active</label>
+                            <label class="twofields" >Question:</label> <input class="twofields" type="text" v-model="qq.newQuestion">
+                            <label>Field Name: <input type="text" v-model="qq.newFieldname"></label>
+                            <label>Field Type:
+                              <select v-model="qq.newFieldtype">
+                                <option value="">Text</option>
+                                <option value="textarea">Textarea</option>
+                                <option value="yesno">Yes/No</option>
+                              </select>
+                            </label>
+                            <label>Priority:</label> <input type="number" v-model="qq.newPriority">
+                            <label>Choices (comma-separated):</label> <input type="text" v-model="qq.newChoices">
+                            <label>Pattern:</label> <input type="text" v-model="qq.newPattern">
+                            <label><input type="checkbox" v-model="qq.newRequired"> Required</label>
+                            <label><input type="checkbox" v-model="qq.newPublic"> Public</label>
+                          </div>
+                          <button @click="saveQuestion(qq)">Save</button>
+                          <button @click="qq.editing = false">Cancel</button>
+                        </div>
+                        <div v-if="qq.adding" class="question-add">
+                          <div class="formfields">
+                            <label class="twofields">Question:</label> <input class="twofields" type="text" v-model="qq.newQuestion">
+                            <label>Field Name: <input type="text" v-model="qq.newFieldname"></label>
+                            <label>Field Type:
+                              <select v-model="qq.newFieldtype">
+                                <option value="">Text</option>
+                                <option value="textarea">Textarea</option>
+                                <option value="yesno">Yes/No</option>
+                              </select>
+                            </label>
+                            <label>Priority:</label> <input type="number" v-model="qq.newPriority">
+                            <label>Choices (comma-separated):</label> <input type="text" v-model="qq.newChoices">
+                            <label>Pattern:</label> <input type="text" v-model="qq.newPattern">
+                            <label><input type="checkbox" v-model="qq.newRequired"> Required</label>
+                            <label><input type="checkbox" v-model="qq.newPublic"> Public</label>
+                          </div>
+                          <button @click="saveNewQuestion(section.key, qq)">Save</button>
+                          <button @click="qq.adding = false">Cancel</button>
+                        </div>
+                      </div>
+                    </template>
                 </div>
             </template>
         </div>
@@ -102,6 +159,7 @@
             addQuestion(sectionKey) {
                 this.questions.push({
                     id: sectionKey,
+                    parentid: null,
                     adding: true,
                     newQuestion: '',
                     newFieldname: '',
@@ -111,7 +169,6 @@
                     newPattern: '',
                     newRequired: false,
                     newPublic: true,
-                    newParentid: null,
                     [sectionKey]: true
                 });
             },
@@ -121,6 +178,7 @@
                 }
                 parentQuestion.children.push({
                     adding: true,
+                    parentid: parentQuestion.id,
                     newQuestion: '',
                     newFieldname: '',
                     newFieldtype: '',
@@ -128,8 +186,7 @@
                     newChoices: '',
                     newPattern: '',
                     newRequired: false,
-                    newPublic: true,
-                    newParentid: parentQuestion.id
+                    newPublic: true
                 });
             },
             editQuestion(question) {
@@ -142,7 +199,6 @@
                 question.newPattern = question.pattern;
                 question.newRequired = question.required || false;
                 question.newPublic = question.newPublic || false;
-                question.newParentid = question.parentid;
                 question.editing = true;
             },
             async saveNewQuestion(sectionKey, question) {
@@ -155,7 +211,7 @@
                     pattern: question.newPattern,
                     required: question.newRequired || false,
                     ispublic: question.newPublic || false,
-                    parentid: question.newParentid || null,
+                    parentid: question.parentid || null,
                     [sectionKey]: true
                 };
                 await fetch('/questions/', {
@@ -172,6 +228,7 @@
                     ...question,
                     editing: false,
                     id: question.id,
+                    parentid: question.parentid,
                     active: question.newActive,
                     question: question.newQuestion,
                     fieldname: question.newFieldname,
@@ -181,7 +238,6 @@
                     pattern: question.newPattern,
                     required: question.newRequired || false,
                     ispublic: question.newPublic || false,
-                    parentid: question.newParentid || null
                 };
                 await fetch(`/questions/${question.id}`, {
                     method: 'PUT',

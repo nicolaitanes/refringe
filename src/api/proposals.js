@@ -3,7 +3,7 @@ import multer from 'multer';
 import SQL from 'sql-template-strings'
 import { CalendarsDB } from './calendars.js';
 import { logged, pgdb } from './pgdb.js';
-import { QuestionsDB } from './questions.js';
+import { nestQuestions, QuestionsDB } from './questions.js';
 import { renderTemplate } from './templates.js';
 import { writeLocalJsonDates } from './time.js';
 
@@ -62,7 +62,7 @@ router.use(upload.none());  // or multipart form data
 router.get('/new', async (req, res) => {
     const calendarsDB = new CalendarsDB(req);
     const questionsDB = new QuestionsDB(req);
-    const questions = await questionsDB.list({ active: true, forproposal: true });
+    const questions = nestQuestions(await questionsDB.list({ active: true, forproposal: true }));
     const events = await calendarsDB.list({ active: true, current: true });
     return renderTemplate(writeLocalJsonDates({ template: 'proposal-new', questions, events }))(req, res);
 });
@@ -78,7 +78,7 @@ router.get('/', async (req, res) => {
     for (const proposal of proposals) proposal.updated = proposal.updated.toISOString().slice(0, 19);
     if (req.headers.accept?.includes('application/json')) return res.json({ proposals });
     await Promise.all(proposals.map(async p => {
-        p.questions = await questionsDB.listAnswers({ proposalid: p.id });
+        p.questions = nestQuestions(await questionsDB.listAnswers({ proposalid: p.id }));
     }));
     return renderTemplate(writeLocalJsonDates({ template: 'proposals', proposals }))(req, res);
 });
@@ -93,7 +93,7 @@ router.get('/:id', async (req, res) => {
     // if json requested, return json
     if (req.headers.accept?.includes('application/json')) return res.json(proposal);
     // otherwise render with template
-    const questions = await questionsDB.listAnswers({ proposalid: req.params.id });
+    const questions = nestQuestions(await questionsDB.listAnswers({ proposalid: req.params.id }));
     const events = await calendarsDB.listLinked('proposal', req.params.id, true);
     return renderTemplate(writeLocalJsonDates({ template: 'proposal-edit', proposal, questions, events }))(req, res);
 });

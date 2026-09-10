@@ -24,8 +24,9 @@
     {{/if}}
 
     {{#if children}}
-        <details class="children twofields">
+        <details open class="ml2 pa1 twofields answer-children">
             <!-- TODO expand/deactivate based on parent selection -->
+            <summary><span>[further questions...]<span></summary>
             <div class="formfields">
                 {{#each children}}
                     {{> answer-edit item=this }}

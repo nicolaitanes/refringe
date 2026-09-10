@@ -160,6 +160,9 @@
      .formfields label:not(:has(input[type="checkbox"])) {
          display: flex;
      }
+     .formfields span.radiogroup > label {
+         display: inline-block;
+     }
      .formfields input {
          flex: 1 0 4em;
      }
@@ -169,6 +172,9 @@
      .twofields {
         grid-column-start: 1;
         grid-column-end: 3;
+     }
+     details[open].answer-children > summary > span {
+        display: none;
      }
     #password,
     #passwordChange {

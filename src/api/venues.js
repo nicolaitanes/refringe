@@ -3,7 +3,7 @@ import multer from 'multer';
 import SQL from 'sql-template-strings'
 import { CalendarsDB } from './calendars.js';
 import { logged, pgdb } from './pgdb.js';
-import { QuestionsDB } from './questions.js';
+import { nestQuestions, QuestionsDB } from './questions.js';
 import { renderTemplate } from './templates.js';
 import { writeLocalJsonDates } from './time.js';
 
@@ -77,7 +77,7 @@ router.use(upload.none());  // or multipart form data
 router.get('/new', async (req, res) => {
     const calendarsDB = new CalendarsDB(req);
     const questionsDB = new QuestionsDB(req);
-    const questions = await questionsDB.list({ active: true, forvenue: true });
+    const questions = nestQuestions(await questionsDB.list({ active: true, forvenue: true }));
     const events = await calendarsDB.list({ active: true, current: true });
     return renderTemplate(writeLocalJsonDates({ template: 'venue-new', questions, events }))(req, res);
 });
@@ -90,7 +90,7 @@ router.get('/', async (req, res) => {
     });
     if (req.headers.accept?.includes('application/json')) return res.json({ venues });
     await Promise.all(venues.map(async v => {
-        v.questions = await questionsDB.listAnswers({ venueid: v.id });
+        v.questions = nestQuestions(await questionsDB.listAnswers({ venueid: v.id }));
     }));
     return renderTemplate(writeLocalJsonDates({ template: 'venues', venues }))(req, res);
 });
@@ -105,7 +105,7 @@ router.get('/:id', async (req, res) => {
     // if json requested, return json
     if (req.headers.accept?.includes('application/json')) return res.json(venue);
     // otherwise render with template
-    const questions = await questionsDB.listAnswers({ venueid: req.params.id });
+    const questions = nestQuestions(await questionsDB.listAnswers({ venueid: req.params.id }));
     const events = await calendarsDB.listLinked('venue', req.params.id, true);
     return renderTemplate(writeLocalJsonDates({ template: 'venue-edit', venue, questions, events }))(req, res);
 });
