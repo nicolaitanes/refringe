@@ -131,7 +131,7 @@ router.post('/', async (req, res) => {
         const events = await calendarsDB.list({ active: true, current: true });
         for (const ev of events) {
             if (('c_' + ev.id) in req.body && req.body['c_'+ev.id]) {
-                await calendarsDB.link(ev.id, 'venue', req.params.id);
+                await calendarsDB.link(ev.id, 'venue', newVenue.id);
             }
         }
 
