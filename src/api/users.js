@@ -46,7 +46,6 @@ export class UsersDB {
         await this.logged.update('users', id, { passhash }, SQL`update users set passhash=${passhash} where id = ${id}`);
     }
     async revokeOtherDevices(id) {
-        await pgdb.logEvent(req.auth.u, 'revoke', { userid: id });
         const result = await this.logged.update('users', id, { revocation: "+1" }, SQL`update users set revocation = revocation + 1 where id=${id} returning revocation`);
         return result.revocation;
     }

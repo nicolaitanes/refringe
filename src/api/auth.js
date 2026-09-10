@@ -97,6 +97,7 @@ export const initAuth = app => {
     
     app.post('/revoke', async (req, res) => {
         const usersDB = new UsersDB(req);
+        await pgdb.logEvent(req.auth.u, 'revoke', { userid: req.auth.u });
         req.auth.r = await usersDB.revokeOtherDevices(req.auth.u);
         issueCookie(req, res, req.auth);
         res.redirect(303, '/menu');
