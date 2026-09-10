@@ -42,7 +42,7 @@ export class UsersDB {
         return await this.logged.update('users', id, userdata, query);
     }
     async updatePassword(id, password) {
-        const passhash = await bcrypt.hash(userdata.password, saltRounds);
+        const passhash = await bcrypt.hash(password, saltRounds);
         await this.logged.update('users', id, { passhash }, SQL`update users set passhash=${passhash} where id = ${id}`);
     }
     async revokeOtherDevices(id) {

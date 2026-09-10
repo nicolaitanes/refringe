@@ -135,7 +135,7 @@ router.post('/:id', async (req, res) => {
     const proposalsDB = new ProposalsDB(req);
     const questionsDB = new QuestionsDB(req);
     try {
-        pgdb.logEvent(req.auth.u, 'proposal edit', req.body);
+        pgdb.logEvent(req.auth.u, 'proposal edit', req.body, null, null, req.params.id);
         const proposal = parseProposal(req.body);
         if (req.auth.l > 10 && req.auth.u !== proposal.userid) return res.status(403).send('Forbidden');
         await proposalsDB.update(req.params.id, proposal);
