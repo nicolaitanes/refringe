@@ -1,12 +1,5 @@
 # TODO
 
-## Deploy test site
-
-- [x] publish to github: https://github.com/nicolaitanes/refringe
-- [ ] dns for refringe.mandelics.com
-- [ ] clone sxs with mandelics-site
-- [ ] deploy mandelics-site/docker-compose with customizations
-
 ## Features
 
 - [ ] email

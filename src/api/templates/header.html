@@ -164,7 +164,10 @@
          display: inline-block;
      }
      .formfields input {
-         flex: 1 0 4em;
+        flex: 1 0 4em;
+        &[name="state"] {
+            width: 4em;
+        }
      }
      .formfields textarea {
          field-sizing: content;
