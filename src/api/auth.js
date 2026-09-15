@@ -118,8 +118,6 @@ export const initAuth = app => {
         return renderTemplate({ template: 'signup' })(req, res);
     });
     
-    // TODO update revocation on user password change
-    
     app.get('/welcome', async (req, res) => {
         const usersDB = new UsersDB(req);
         if (await usersDB.count()) return res.redirect(303, '/login');
