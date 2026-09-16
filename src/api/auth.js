@@ -199,7 +199,7 @@ export const initAuth = app => {
 
         if (await usersDB.getByName(req.body.username)) return renderError(`The username ${req.body.username} is already taken.`);
         
-        const roleid = req.auth.l === 0 && req.roleid
+        const roleid = req.auth?.l === 0 && req.roleid
               ? req.body.roleid
               : await usersDB.findRoleID(20);
         const user = await usersDB.create({
@@ -215,7 +215,7 @@ export const initAuth = app => {
             zip: req.body.zip || null,
         });
         if (!user) return res.status(500).send('Error');
-        if (!req.auth.u) {
+        if (!req.auth?.u) {
             req.auth = issueCookie(req, res, {
                 u: user.id,
                 n: user.username,
