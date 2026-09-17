@@ -1,7 +1,7 @@
 insert into pages (urlpath, content) values
     (
         '(header)',
-        E'<nav class=\"header bar\">\n  <ul>\n    <li><a class=\"nav\" href=\"/calendar/\">Full Schedule</a></li>\n    <li><a class=\"nav\" href=\"/login\">Artist Login</a></li>\n    <li><a class=\"nav\" href=\"https://docs.google.com/forms/d/e/1FAIpQLSd2lZxTndl2riVHEyBuEVNcC8Q9u8s44oCvwSdLo6w7Bqx74w/viewform?usp=header\">Volunteer</a></li>\n  </ul>\n</nav>'
+        E'<nav class=\"header bar\">\n  <ul>\n    <li><a class=\"nav\" href=\"/calendars/events/\">Full Schedule</a></li>\n    <li><a class=\"nav\" href=\"/login\">Artist Login</a></li>\n    <li><a class=\"nav\" href=\"https://docs.google.com/forms/d/e/1FAIpQLSd2lZxTndl2riVHEyBuEVNcC8Q9u8s44oCvwSdLo6w7Bqx74w/viewform?usp=header\">Volunteer</a></li>\n  </ul>\n</nav>'
     ),
     (
         '(footer)',
