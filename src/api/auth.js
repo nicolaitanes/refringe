@@ -10,6 +10,7 @@ const upload = multer();
 const noauthAllowList = new Set([
     '/',
     '/auth',
+    '/calendars/events',
     '/index',
     '/login',
     '/logout',
@@ -51,6 +52,7 @@ export const initAuth = app => {
                 // TODO check user in cache etc.
                 req.auth = auth;
                 if (noauthAllowList.has(req.path)) return req.next();
+                if (req.path.startsWith('/calendars/events/')) return req.next();
         
                 if (!auth?.u) return res.redirect(303, '/');
                 
@@ -76,6 +78,7 @@ export const initAuth = app => {
         }
         
         if (noauthAllowList.has(req.path)) return req.next();
+        if (req.path.startsWith('/calendars/events/')) return req.next();
         res.redirect(303, '/');
     });
     
