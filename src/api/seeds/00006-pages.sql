@@ -29,5 +29,5 @@ insert into pages (urlpath, content) values
     ),
     (
         '/cur-events/',
-        E'# Current Events\n\n'
+        E'# Current Events\n\n<iframe src=\"/calendars/events/\" style=\"width: 100%; height: 75vh\"></iframe>\n'
     );

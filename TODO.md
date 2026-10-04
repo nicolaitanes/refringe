@@ -10,8 +10,7 @@
     - [ ] venues to creator (on add/edit)
     - [ ] draft schedule (links) to all proposers / one proposer on a calendar
     - [ ] mass email to proposers on a calendar
-- [ ] iframeable monthly fullcalendar, in seeded / and /cur-events/
-    - include public callforwork deadlines
+    - [ ] configure which admins get bcc (all, initially?)
 - [ ] schedule preview/admin tools
 
 ## Fix/Test

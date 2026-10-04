@@ -1,0 +1,105 @@
+{{> header title="Events" sitename=sitename opengraph=opengraph }}
+
+<script src="/js/fullcalendar/index.global.min.js"></script>
+
+<style>
+  .fc-toolbar {
+      margin-right: 4rem;
+  }
+</style>
+
+<div id="divMain" class="ma1 events-calendar flex flex-column">
+  <div id="calendar" class="flex-auto"></div>
+</div>
+
+<script type="module">
+  import { createApp, ref } from 'vue';
+
+  function readDate(dateString) {
+      if (dateString instanceof Date) return dateString;
+      return dateString && new Date(dateString + 'T00:00:00');
+  }
+  function readTime(timeString) {
+      if (!timeString) return null;
+      if (timeString instanceof Date) return timeString;
+      const [hours, minutes] = timeString.split(':');
+      const date = new Date();
+      date.setHours(parseInt(hours), parseInt(minutes));
+      return date;
+  }
+  /*
+    calling_public || calling_users: true
+    callforworkHTML
+    publicname || name
+    notesHTML
+    startdate, enddate, deadline
+  */
+  const EventsApp = {
+      delimiters: ['[[', ']]'],
+      mounted() {
+          const now = new Date();
+          const validStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          const validEnd = new Date(validStart);
+          validEnd.setYear(validEnd.getFullYear() + 1);
+
+          // injected JSON from the server
+          const rawCalendars = JSON.parse(`{{{ calendars }}}` || []);
+          const calendars = rawCalendars.map((c) => ({
+              ...c,
+              id: c.publicid || c.id,
+              calendarid: c.calendarid || c.id,
+              name: c.publicname || c.name,
+              startDate: readDate(c.startdate),
+              endDate: readDate(c.enddate),
+              deadLine: readDate(c.deadline),
+              calling: (c.calling_public || c.calling_users) && !(c.deadline && readDate(c.deadline) < validStart)
+          }));
+          const events = calendars.flatMap((c) => [
+              c.deadline && c.deadLine >= validStart
+                  ? {
+                      id: c.id,
+                      title: 'CFW: ' + c.name,
+                      start: c.deadLine,
+                      end: c.deadLine,
+                      allDay: true
+                  } : null,
+              c.startdate && c.enddate && c.ispublic
+                  ? {
+                      id: c.id,
+                      title: c.name,
+                      start: c.startDate,
+                      end: c.endDate,
+                      allDay: true
+                  } : null
+          ]).filter(Boolean).sort((a, b) => a.start - b.start);
+            
+            this.calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+                initialView: 'dayGridMonth',
+                views: {
+                    dayGridMonth: {
+                        showNonCurrentDates: true,
+                    }
+                },
+                validRange: {
+                    start: validStart,
+                    end: validEnd
+                },
+                events,
+                eventClick: (info) => {
+                    const calendar = calendars.find(c => c.id === info.event.id);
+                    if (!calendar) return;
+                    window.location.href = calendar.calling
+                        ? '/calendars/' + calendar.calendarid
+                        : '/calendars/events/' + calendar.key;
+                }
+            });
+            this.calendar.render();
+        },
+        methods: {
+        }
+    }
+
+    createApp(EventsApp).mount('div.events-calendar');
+
+</script>
+    

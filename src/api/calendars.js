@@ -29,7 +29,7 @@ export class CalendarsDB {
         return result.rows;
     }
     async get(id) {
-        const result = await pgdb.query(SQL`select * from calendars where id = ${id}`);
+        const result = await pgdb.query(SQL`select c.*, p.id as publicid, p.publicname, p.key, p.ispublic, p.priority from calendars c left join publiccalendars p on c.id = p.calendarid where c.id = ${id}`);
         const row = result.rows[0];
         if (row?.notes) row.notesHTML = markdownConverter.makeHtml(row.notes);
         if (row?.callforwork) row.callforworkHTML = markdownConverter.makeHtml(row.callforwork);
@@ -227,11 +227,13 @@ router.get('/public/:key', async (req, res) => {
 });
 
 router.get('/events/', async (req, res) => {
-    // TODO fullcalendar of public calendars and upcoming deadlines; pre-highlight next event
-    //           : (await new CalendarsDB(req).list({ active: true, current: true, ispublic: true, limit: 1 }))[0];
-
-    const calendar = (await new CalendarsDB(req).list({ active: true, current: true, ispublic: true, limit: 1 }))[0];
-    res.redirect(303, calendar?.key ? '/calendars/events/' + calendar.key : '/');
+    const calendars = (await new CalendarsDB(req).list({ active: true, current: true }))
+          .filter(c => c.ispublic || c.callingpublic || (req.auth?.u && calling_users));
+    
+    return renderTemplate(tmplJsonFields({
+        template: 'events',
+        calendars
+    }))(req, res);
 });
 
 router.get('/events/:key', async (req, res) => {
@@ -320,10 +322,7 @@ router.get('/:id', async (req, res) => {
         if (status !== 'public' && status !== 'usercall') return res.status(403).send('Forbidden');
     }
     if (req.headers.accept?.includes('application/json')) return res.json(calendar);
-    if (!status.endsWith('call')) {
-        calendar.callforwork = null;
-        calendar.deadline = null;
-    }
+    // TODO hide call for work / deadlines if past?
     calendar.name = calendar.publicname || calendar.name;
     return renderTemplate(writeLocalJsonDates({
         template: req.auth && req.auth.l <= 10 ? 'calendar-edit' : 'calendar-detail',
