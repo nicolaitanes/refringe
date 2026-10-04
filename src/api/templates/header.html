@@ -207,6 +207,12 @@
                   ev.submitter.disabled = true;
               });
           }
+          if (window !== window.parent) { // no nav in iframe
+              for (const sel of ['.usermenu', '.breadcrumb']) {
+                  const toHide = document.querySelector(sel);
+                  if (toHide) toHide.style.display = 'none';
+              }
+          }
       });
     </script>
   </head>
