@@ -8,14 +8,14 @@
         {{#if isChoices}}
             <span class="radiogroup">
                 {{#each choices}}
-                <label><input type="radio" name="{{ fieldname }}" id="{{ fieldname }}" value="{{ this }}"> {{ this }}</label>
+                <label><input type="radio" name="{{ ../fieldname }}" id="{{ ../fieldname }}" value="{{ this }}" {{#ifEquals this ../answer}}checked{{/ifEquals}}> {{ this }}</label>
                 {{/each}}
             </span>
         {{else}}
             {{#if isYesno}}
                 <span class="radiogroup">
-                <label><input type="radio" name="{{ fieldname }}" id="{{ fieldname }}" value="true"> Yes</label>
-                <label><input type="radio" name="{{ fieldname }}" id="{{ fieldname }}" value="False"> No</label>
+                <label><input type="radio" name="{{ fieldname }}" id="{{ fieldname }}" value="true" {{#ifEquals answer "true"}}checked{{/ifEquals}}> Yes</label>
+                <label><input type="radio" name="{{ fieldname }}" id="{{ fieldname }}" value="false" {{#ifEquals answer "false"}}checked{{/ifEquals}}> No</label>
                 </span>
             {{else}}
                 <input type="text" name="{{ fieldname }}" id="{{ fieldname }}" value="{{ answer }}" {{#if required}}required{{/if}} {{#if pattern}}pattern="{{ pattern }}"{{/if}}>
@@ -24,7 +24,7 @@
     {{/if}}
 
     {{#if children}}
-        <details open class="ml2 pa1 twofields answer-children">
+        <details {{#ifEquals answer "true"}}open{{/ifEquals}} class="ml2 pa1 twofields answer-children">
             <!-- TODO expand/deactivate based on parent selection -->
             <summary><span>[further questions...]<span></summary>
             <div class="formfields">

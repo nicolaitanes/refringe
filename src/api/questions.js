@@ -40,7 +40,7 @@ export class QuestionsDB {
             fieldname, fieldtype, choices, pattern, question
         ) values (
             ${q.required || false}, ${q.ispublic || false}, ${q.parentid || null}, ${q.forproposal || false}, ${q.foruser || false}, ${q.forvenue || false}, ${q.priority || 0},
-            ${q.fieldname}, ${q.fieldtype}, ${q.choices || null}, ${q.pattern || null}, ${q.question}
+            ${q.fieldname}, ${q.fieldtype}, ${q.choices ? JSON.stringify(q.choices) : null}, ${q.pattern || null}, ${q.question}
         ) returning *`);
     }
     async update(id, q) {
@@ -54,7 +54,7 @@ export class QuestionsDB {
         priority = ${q.priority},
         fieldname = ${q.fieldname},
         fieldtype = ${q.fieldtype},
-        choices = ${q.choices},
+        choices = ${JSON.stringify(q.choices)},
         pattern = ${q.pattern},
         question = ${q.question}
         where id=${id}`);

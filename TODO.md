@@ -13,23 +13,13 @@
     - [ ] configure which admins get bcc (all, initially?)
 - [ ] schedule preview/admin tools
 
-## Fix/Test
-
-- [ ] answer editing for yes/no questions
-- [ ] question editor
-     - [ ] saving / disabled
-     - [ ] <option>text</option> selected by default
-     - [ ] are public responses shown anywhere? for user/proposal/venue
-     - [ ] try various field types, choices
-     - [ ] what about orphaned followups?
-- [ ] better breadcrumbs header
-
 ## Improvements
 
 - [ ] links from calendar-detail
     - [ ] public schedule
     - [ ] "my" schedule (preview)
     - [ ] new proposal
+- [ ] better breadcrumbs header
 - [ ] markdown instructions / cheat sheet link (pages, question[type="textarea"])
 - [ ] "my calendar" at bottom of menu
 - [ ] cancelled shows
@@ -55,3 +45,7 @@
 - [ ] venue visibility to other users?
 - [ ] proposal website link
 - [ ] notes on calendars?
+- [ ] question editor
+     - [ ] saving / disabled
+     - [ ] are public responses shown anywhere? for user/proposal/venue
+     - [ ] what about orphaned followups?

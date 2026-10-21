@@ -12,11 +12,11 @@
         <div class="section">
             <h2>[[ section.title ]]</h2>
             <template v-for="q of section.questions">
-                <div :class="{ question : true, inactive: !q.active }">
+                <div class="ma1 pa1 ba bw1 b--mid-gray" :class="{ question : true, inactive: !q.active }">
                     <div class="question-text">
                         [[ q.required ? '*' : '' ]][[ q.question ]]
                     </div>
-                    <div class="question-controls">
+                    <div class="question-controls" v-if="!q.editing">
                         <button @click="editQuestion(q)">Edit</button>
                         <button @click="addFollowup(q)">Add Followup</button>
                     </div>
@@ -66,7 +66,7 @@
                         <div class="question-text">
                           [[ qq.required ? '*' : '' ]][[ qq.question ]]
                         </div>
-                        <div class="question-controls">
+                        <div class="question-controls" v-if="!qq.editing">
                           <button @click="editQuestion(qq)">Edit</button>
                         </div>
                         <div v-if="qq.editing" class="question-edit">
@@ -161,6 +161,7 @@
                     id: sectionKey,
                     parentid: null,
                     adding: true,
+                    newActive: true,
                     newQuestion: '',
                     newFieldname: '',
                     newFieldtype: '',
@@ -179,6 +180,7 @@
                 parentQuestion.children.push({
                     adding: true,
                     parentid: parentQuestion.id,
+                    newActive: true,
                     newQuestion: '',
                     newFieldname: '',
                     newFieldtype: '',
@@ -186,7 +188,7 @@
                     newChoices: '',
                     newPattern: '',
                     newRequired: false,
-                    newPublic: true
+                    newPublic: false
                 });
             },
             editQuestion(question) {
@@ -203,6 +205,7 @@
             },
             async saveNewQuestion(sectionKey, question) {
                 const newQuestion = {
+                    active: true,
                     question: question.newQuestion,
                     fieldname: question.newFieldname,
                     fieldtype: question.newFieldtype,
@@ -214,13 +217,15 @@
                     parentid: question.parentid || null,
                     [sectionKey]: true
                 };
-                await fetch('/questions/', {
+                const response = await fetch('/questions/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(newQuestion)
                 });
+                const newQ = await response.json();
+                newQuestion.id = newQ.id;
                 this.questions.splice(this.questions.findIndex(q => q.id === sectionKey), 1, newQuestion);
             },
             async saveQuestion(question) {

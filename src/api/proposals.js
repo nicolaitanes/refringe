@@ -111,7 +111,7 @@ router.post('/', async (req, res) => {
         const questions = await questionsDB.list({ active: true, forproposal: true });
         await Promise.all(questions.map(async (q) => {
             if (q.fieldname in req.body && req.body[q.fieldname]) {
-                await questionsDB.addOrUpdateAnswer({ questionid: q.id, proposalid: newProposal.id, answer: req.body[q.fieldname] });
+                await questionsDB.addOrUpdateAnswer({ questionid: q.id, proposalid: newProposal.id, answer: req.body[q.fieldname] || null });
             }
         }));
 
@@ -143,7 +143,7 @@ router.post('/:id', async (req, res) => {
         const answers = await questionsDB.listAnswers({ proposalid: req.params.id });
         await Promise.all(answers.map(async (q) => {
             if (q.fieldname in req.body && (req.body[q.fieldname] || null) !== q.answer) {
-                await questionsDB.addOrUpdateAnswer({ questionid: q.id, proposalid: req.params.id, answer: req.body[q.fieldname] });
+                await questionsDB.addOrUpdateAnswer({ questionid: q.id, proposalid: req.params.id, answer: req.body[q.fieldname] || null });
             }
         }));
 
