@@ -228,7 +228,7 @@ router.get('/public/:key', async (req, res) => {
 
 router.get('/events/', async (req, res) => {
     const calendars = (await new CalendarsDB(req).list({ active: true, current: true }))
-          .filter(c => c.ispublic || c.callingpublic || (req.auth?.u && calling_users));
+          .filter(c => c.ispublic || c.callingpublic || (req.auth?.u && c.calling_users));
     
     return renderTemplate(tmplJsonFields({
         template: 'events',
