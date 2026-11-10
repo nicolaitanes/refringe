@@ -52,7 +52,7 @@ export const initAuth = app => {
                 // TODO check user in cache etc.
                 req.auth = auth;
                 if (noauthAllowList.has(req.path)) return req.next();
-                if (req.path.startsWith('/calendars/' && req.method === 'GET')) return req.next();
+                if (req.path.startsWith('/calendars/') && req.method === 'GET') return req.next();
         
                 if (!auth?.u) return res.redirect(303, '/');
                 
