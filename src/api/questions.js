@@ -5,6 +5,7 @@ import { logged, pgdb } from './pgdb.js';
 import { ProposalsDB } from './proposals.js';
 import { renderTemplate } from './templates.js';
 import { tmplJsonFields } from './time.js';
+import { VenuesDB } from './venues.js';
 
 export const markdownConverter = new showdown.Converter({
     safeMode: true,

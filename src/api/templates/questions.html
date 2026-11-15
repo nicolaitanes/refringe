@@ -200,7 +200,7 @@
                 question.newChoices = question.choices ? question.choices.join(', ') : '';
                 question.newPattern = question.pattern;
                 question.newRequired = question.required || false;
-                question.newPublic = question.newPublic || false;
+                question.newPublic = question.ispublic || false;
                 question.editing = true;
             },
             async saveNewQuestion(sectionKey, question) {
@@ -226,7 +226,8 @@
                 });
                 const newQ = await response.json();
                 newQuestion.id = newQ.id;
-                this.questions.splice(this.questions.findIndex(q => q.id === sectionKey), 1, newQuestion);
+                const hostArray = question.parentid ? this.questions : this.questions.find(q => q.id === question.parentid)?.children ?? []
+                hostArray.splice(hostArray.findIndex(q => q.id === sectionKey), 1, newQuestion);
             },
             async saveQuestion(question) {
                 const updatedQuestion = {
@@ -251,7 +252,8 @@
                     },
                     body: JSON.stringify(updatedQuestion)
                 });
-                this.questions.splice(this.questions.findIndex(q => q.id === question.id), 1, updatedQuestion);
+                const hostArray = question.parentid ? this.questions : this.questions.find(q => q.id === question.parentid)?.children ?? []
+                hostArray.splice(hostArray.findIndex(q => q.id === sectionKey), 1, newQuestion);
             },
         }
     }

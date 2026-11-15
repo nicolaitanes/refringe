@@ -135,9 +135,11 @@ router.post('/:id', async (req, res) => {
     const proposalsDB = new ProposalsDB(req);
     const questionsDB = new QuestionsDB(req);
     try {
+        const savedProposal = await proposalsDB.get(req.params.id);
         pgdb.logEvent(req.auth.u, 'proposal edit', req.body, null, null, req.params.id);
+        
         const proposal = parseProposal(req.body);
-        if (req.auth.l > 10 && req.auth.u !== proposal.userid) return res.status(403).send('Forbidden');
+        if (req.auth.l > 10 && req.auth.u !== savedProposal.userid) return res.status(403).send('Forbidden');
         await proposalsDB.update(req.params.id, proposal);
 
         const answers = await questionsDB.listAnswers({ proposalid: req.params.id });
@@ -147,11 +149,11 @@ router.post('/:id', async (req, res) => {
             }
         }));
 
-        const events = await calendarsDB.listLinked('venue', req.params.id, true);
+        const events = await calendarsDB.listLinked('proposal', req.params.id, true);
         for (const ev of events) {
             if (('c_' + ev.id) in req.body && req.body['c_'+ev.id] !== ev.active) {
-                if (ev.active) await calendarsDB.unlink(ev.id, 'venue', req.params.id);
-                else await calendarsDB.link(ev.id, 'venue', req.params.id);
+                if (ev.active) await calendarsDB.unlink(ev.id, 'proposal', req.params.id);
+                else await calendarsDB.link(ev.id, 'proposal', req.params.id);
             }
         }
         // TODO handle link status if present

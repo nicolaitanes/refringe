@@ -148,8 +148,9 @@ router.post('/:id', async (req, res) => {
     const questionsDB = new QuestionsDB(req);
     const venuesDB = new VenuesDB(req);
     try {
+        const savedVenue = await venuesDB.get(req.params.id);
         const venue = parseVenue(req.body);
-        if (req.auth.l > 10 && req.auth.u !== venue.userid) return res.status(403).send('Forbidden');
+        if (req.auth.l > 10 && req.auth.u !== savedVenue.userid) return res.status(403).send('Forbidden');
         await venuesDB.update(req.params.id, venue);
 
         const answers = await questionsDB.listAnswers({ venueid: req.params.id });

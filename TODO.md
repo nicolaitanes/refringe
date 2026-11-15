@@ -15,12 +15,24 @@
 
 ## Improvements
 
+- [ ] from robo-audit
+    - [ ] hide non-public answers from responses to other users
+    - [ ] block unpublished calendar browsing by id (enable explicit previews)
+    - [ ] calendar get requests should freshen token
+    - [ ] handle unsuccessful question (not answer) save
+    - [ ] fully enforce required questions (choice, yesno)
+- [ ] event-specific questions / hide questions for specific events / override wording
 - [ ] links from calendar-detail
     - [ ] public schedule
     - [ ] "my" schedule (preview)
     - [ ] new proposal
 - [ ] better breadcrumbs header
 - [ ] markdown instructions / cheat sheet link (pages, question[type="textarea"])
+- [ ] general Notes as a comment wall for logged in users?
+- [ ] proposers scan each others' QR code to share schedule previews?
+- [ ] make it hard to change fieldName of a question
+- [ ] allow deleting (perma-hiding?) questions
+- [ ] stageName as a built-in proposal question, used in schedules
 - [ ] "my calendar" at bottom of menu
 - [ ] cancelled shows
     - [ ] by calendars_proposals.status

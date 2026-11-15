@@ -41,7 +41,7 @@ export class TagsDB {
             query.append(', ');
             query.append(part);
         }
-        query.append(` returning *`);
+        query.append(` where id=${id} returning *`);
         return await this.logged.update('tags', id, q, query);
     }
     async listLinked(contextType, recordid, q) {

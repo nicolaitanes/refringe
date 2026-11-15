@@ -56,7 +56,7 @@ export const initAuth = app => {
         
                 if (!auth?.u) return res.redirect(303, '/');
                 
-                if (!auth?.d || (auth.d + 5 * 60 * 1000) < new Date().getTime()) {
+                if (!auth?.d || (auth.d + 60 * 1000) < new Date().getTime()) {
                     try {
                         const usersDB = new UsersDB(req);
                         const user = await usersDB.getByID(auth.u);

@@ -55,7 +55,7 @@ export class NotesDB {
     }
     async update(id, q) {
         const query = SQL`update notes set updated=now()`;
-        if ('content' in q) query.append(SQL`, content=${content}`);
+        if ('content' in q) query.append(SQL`, content=${q.content}`);
         if ('is_visible_to_organizers' in q) query.append(SQL`, is_visible_to_organizers = ${!!q.is_visible_to_organizers}`);
         if ('is_visible_to_proposers' in q) query.append(SQL`, is_visible_to_proposers = ${!!q.is_visible_to_proposers}`);
         if ('is_visible_to_public' in q) query.append(SQL`, is_visible_to_public = ${!!q.is_visible_to_public}`);
@@ -68,7 +68,7 @@ export class NotesDB {
         await this.logged.delete('notes_shows', [id], SQL`delete from notes_shows where noteid = ${id}`, { noteid: id });
         await this.logged.delete('notes_users', [id], SQL`delete from notes_users where noteid = ${id}`, { noteid: id });
         await this.logged.delete('notes_venues', [id], SQL`delete from notes_venues where noteid = ${id}`, { noteid: id });
-        await this.logged.delete('notes', id);
+        await this.logged.delete('notes', id, SQL`delete from notes where id=${id}`);
     }
 };
 

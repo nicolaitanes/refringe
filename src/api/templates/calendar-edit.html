@@ -801,10 +801,10 @@ h1 {
                     if (k && v) params[k] = decodeURIComponent(v);
                 });
                 if (params.show) {
-                    this.selectedShow = +params.show;
+                    this.selectedShow = params.show;
                     this.selectedProposal = null;
                 } else if (params.proposal) {
-                    this.selectedProposal = +params.proposal;
+                    this.selectedProposal = params.proposal;
                     this.selectedShow = null;
                 }
                 if (params.venue) {
@@ -864,7 +864,7 @@ h1 {
                 });
             },
             deleteshow(showID) {
-                makeApiCall('/calendars/'+this.currentCalendarID+'/shows/'+showData.id, { active: false }, 'PUT')
+                makeApiCall('/calendars/'+this.currentCalendarID+'/shows/'+showID, { active: false }, 'PUT')
                 .then(() => {
                     this.loadShows();
                     this.loadProposals();

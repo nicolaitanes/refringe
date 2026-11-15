@@ -85,7 +85,7 @@ export class CalendarsDB {
     async unlink(id, entity, entityid) {
         const query = SQL`update`;
         query.append(` calendars_${entity}s set active = false where ${entity}id =`);
-        query.append(SQL` ${entityid} and calendarid=${calendarid}`);
+        query.append(SQL` ${entityid} and calendarid=${id}`);
         await this.logged.update('calendars_'+entity, [id, entityid], { calendarid: id, [entity+'id']: entityid, active: false }, query);
     }
     async listProposals(id) {
@@ -115,7 +115,7 @@ export class CalendarsDB {
         if ('starttime' in q) query.append(SQL`, starttime=${q.starttime || null}`);
         if ('endtime' in q) query.append(SQL`, endtime=${q.endtime || null}`);
         query.append(SQL` where id=${id} returning *`);
-        return await this.logged.update('calendars', id, q, query);
+        return await this.logged.update('shows', id, q, query);
     }
     async getPublic(key) {
         const result = await pgdb.query(SQL`select p.*, c.notes, c.startdate, c.enddate from publiccalendars p left join calendars c on p.calendarid = c.id where p.key = ${key} order by ispublic desc, priority limit 1`);
@@ -228,7 +228,7 @@ router.get('/public/:key', async (req, res) => {
 
 router.get('/events/', async (req, res) => {
     const calendars = (await new CalendarsDB(req).list({ active: true, current: true }))
-          .filter(c => c.ispublic || c.callingpublic || (req.auth?.u && c.calling_users));
+          .filter(c => c.ispublic || c.calling_public || (req.auth?.u && c.calling_users));
     
     return renderTemplate(tmplJsonFields({
         template: 'events',
