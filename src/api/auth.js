@@ -78,7 +78,7 @@ export const initAuth = app => {
         }
         
         if (noauthAllowList.has(req.path)) return req.next();
-        if (req.path.startsWith('/calendars/events/')) return req.next();
+        if (req.path.startsWith('/calendars/') && req.method === 'GET') return req.next();
         res.redirect(303, '/');
     });
     

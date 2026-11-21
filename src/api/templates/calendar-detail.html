@@ -14,11 +14,23 @@
   </div>
   {{/if}}
   {{#if calendar.deadline}}
-  <div>
-    <b>Deadline: {{ calendar.deadline }}</b>
-  </div>
+    {{#if pastDeadline}}
+    {{else}}
+    <div>
+      <b>Deadline for submissions: {{ calendar.deadline }}</b>
+    </div>
+    {{/if}}
+  {{/if}}
+  {{#if auth.u}}
+    {{#if pastDeadline}}
+    {{else}}
+    <a href="/proposals/new">[New Proposal]</a>
+    <a href="/menu">[My Proposals]</a>
+    {{/if}}
   {{/if}}
 
-  <!-- TODO links to schedule -->
+  {{#if calendar.ispublic}}
+  <a href="/calendars/events/{{ calendar.key }}">[Full Schedule]</a>
+  {{/if}}
 </div>
 

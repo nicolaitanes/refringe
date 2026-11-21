@@ -330,12 +330,14 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     const calendar = await new CalendarsDB(req).get(req.params.id);
     if (!calendar) return res.status(404).send('Not Found');
+    const deadlineOrStart = calendar.deadline || calendar.startdate;
+    const pastDeadline = deadlineOrStart < new Date(new Date().getTime() + 24*60*60_000);
     let status = !calendar.active ? 'inactive'
           : calendar.ispublic ? 'public'
           : calendar.calling_public ? 'publiccall'
           : calendar.calling_users ? 'usercall'
           : 'draft';
-    if (calendar.deadline && status.endsWith('call') && calendar.deadline < new Date()) {
+    if (pastDeadline && status.endsWith('call')) {
         status = 'draft';
     }
     if (!req.auth || req.auth.l > 20) {
@@ -344,12 +346,13 @@ router.get('/:id', async (req, res) => {
         if (status !== 'public' && status !== 'usercall') return res.status(403).send('Forbidden');
     }
     if (req.headers.accept?.includes('application/json')) return res.json(calendar);
-    // TODO hide call for work / deadlines if past?
+    if (pastDeadline) calendar.callforwork = null;
     calendar.name = calendar.publicname || calendar.name;
     return renderTemplate(writeLocalJsonDates({
         template: req.auth && req.auth.l <= 10 ? 'calendar-edit' : 'calendar-detail',
         calendar,
         calendarJSON: tmplJson(calendar),
+        pastDeadline,
         status
     }))(req, res);
 });
