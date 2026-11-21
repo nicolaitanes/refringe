@@ -83,7 +83,7 @@ h3 {
         import { html, reactive } from 'arrow-js';
 
         const urlSearch = new URLSearchParams(location.hash?.slice(1));
-        window.venueid = urlSearch.has('venue') ? +urlSearch.get('venue') : null;
+        window.venueid = urlSearch.has('venue') ? urlSearch.get('venue') : null;
 
         const venuesByID = {};
         for (const venue of venues) {

@@ -111,11 +111,13 @@ function parseQuestion(body) {
 }
 
 // also sets answerHTML for fieldtype 'textarea'
-export function nestQuestions(questions) {
+export function nestQuestions(questions, ispublic) {
     const nested = [];
     const byId = {};
     for (const q of questions) byId[q.id] = q;
     for (const q of questions) {
+        if (ispublic && !q.ispublic) continue;
+        
         if (q.fieldtype === 'textarea' && q.answer) {
             q.answerHTML = markdownConverter.makeHtml(q.answer);
         }

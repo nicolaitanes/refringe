@@ -3,7 +3,7 @@ import multer from 'multer';
 import SQL from 'sql-template-strings'
 import { NotesDB } from './notes.js';
 import { logged, pgdb } from './pgdb.js';
-import { markdownConverter } from './questions.js';
+import { markdownConverter, QuestionsDB } from './questions.js';
 import { TagsDB } from './tags.js';
 import { renderTemplate } from './templates.js';
 import { tmplJson, tmplJsonFields, writeLocalJsonDates } from './time.js';
@@ -239,6 +239,7 @@ router.get('/events/', async (req, res) => {
 router.get('/events/:key', async (req, res) => {
     const calendarsDB = new CalendarsDB(req);
     const notesDB = new NotesDB(req);
+    const questionsDB = new QuestionsDB(req);
     const tagsDB = new TagsDB(req);
     const calendar = await calendarsDB.getPublic(req.params.key);
     if (!calendar) return res.status(404).send('Not Found');
@@ -257,6 +258,20 @@ router.get('/events/:key', async (req, res) => {
         notesDB.list({ active: true, level: 99 }),
         tagsDB.listLinked('proposal', null, { active: true, level: 99 }),
         tagsDB.listLinked('show', null, { active: true, level: 99 })
+    ]);
+    await Promise.all([
+        ...proposals.map(async p => {
+            const qa = await questionsDB.listAnswers({ proposalid: p.id });
+            for (const { fieldname, answer, ispublic } of qa) {
+                if (ispublic) p[fieldname] = answer;
+            }
+        }),
+        ...venues.map(async v => {
+            const qa = await questionsDB.listAnswers({ venueid: v.id });
+            for (const { fieldname, answer, ispublic } of qa) {
+                if (ispublic) v[fieldname] = answer;
+            }
+        })
     ]);
     return renderTemplate(tmplJsonFields({
         template: 'event-schedule',
@@ -280,6 +295,7 @@ router.get('/events/:key', async (req, res) => {
 router.get('/events/:key/map/', async (req, res) => {
     const calendarsDB = new CalendarsDB(req);
     const notesDB = new NotesDB(req);
+    const questionsDB = new QuestionsDB(req);
     const tagsDB = new TagsDB(req);
     const calendar = await calendarsDB.getPublic(req.params.key);
     if (!calendar) return res.status(404).send('Not Found');
@@ -287,6 +303,12 @@ router.get('/events/:key/map/', async (req, res) => {
         calendarsDB.listShows(calendar.calendarid),
         calendarsDB.listVenues(calendar.calendarid)
     ]);
+    await Promise.all(venues.map(async v => {
+        const qa = await questionsDB.listAnswers({ venueid: v.id });
+        for (const { fieldname, answer, ispublic } of qa) {
+            if (ispublic) v[fieldname] = answer;
+        }
+    }));
     const presentVenueIDs = new Set(shows.map(s => s.venueid));
     return renderTemplate(tmplJsonFields({
         template: 'event-map',

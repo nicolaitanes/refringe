@@ -230,9 +230,9 @@ ul {
 
         const urlSearch0 = new URLSearchParams(document.location.search);
         const orderBy = urlSearch0.get('by') || 'day';
-        if (urlSearch0.get('proposal')) window.proposalid = +urlSearch0.get('proposal');
+        if (urlSearch0.get('proposal')) window.proposalid = urlSearch0.get('proposal');
         if (urlSearch0.get('tag')) window.tagName = urlSearch0.get('tag');
-        if (urlSearch0.get('venue')) window.venueid = +urlSearch0.get('venue');
+        if (urlSearch0.get('venue')) window.venueid = urlSearch0.get('venue');
         window.onlyFavorites = !!urlSearch0.get('favs');
 
         const urlSearch = new URLSearchParams();
@@ -402,7 +402,7 @@ ul {
         let subhref = '';
 
         if (proposalid) {
-            subdesc = proposals.find(p => p.id === proposalid)?.description.replace(/&amp;/g, '&');
+            subdesc = proposals.find(p => p.id === proposalid)?.description?.replace(/&amp;/g, '&');
             subhref = queryBase + '&proposal=' + proposalid;
             window.shows = window.shows.filter(s => {
                 if (s.proposalid !== proposalid) {
@@ -563,7 +563,7 @@ ul {
         state.noDescription = state.shows.flatMap(s => s.items.flatMap(it => it.grouped?.length ? it.grouped : [it])).length > 30;
 
         const isApple = () => navigator.userAgent.match(/Version\/[\d\.]+.*Safari/);
-        const mapUrl = (v) => 'map/#venue=' + v.id;
+        const mapUrl = (v) => '/calendars/events/' + key + '/map/#venue=' + v.id;
         /*{
             if (!v?.latitude || !v?.longitude) return '';
             return (isApple() ? 'https://maps.apple.com/?ll=' : 'https://www.google.com/maps?q=') + (v.latitude.toFixed(5) + ',' + v.longitude.toFixed(5)) +
@@ -629,6 +629,7 @@ ul {
 <nav>
     <div class="days">
         <a href="/">🏠</a>
+        <a href="/calendars/events/{{ key }}">🠉</a>
         <div style="${(orderBy && orderBy !== 'day') || onlyFavorites || proposalid || venueid || (tagName && tagName !== 'Group Show') ? 'display: none' : 'display: contents'}">
             ${() => dates.map(d => html`<a href="${() => '#' + d}">${d.slice(5)}</a>`)}
         </div>
@@ -647,7 +648,7 @@ ul {
             <summary>Venues</summary>
             <div style="display: flex; justify-content: space-between">
                 <a href="${linkByVenue}">(show full schedule by Venue)</a>
-                <a href="map/">🗺️ Venue Map</a>
+                <a href="/calendars/events/{{ key }}/map/">🗺️ Venue Map</a>
             </div>
             <ul>
                 ${() => state.venues.map(v => html`<li>
