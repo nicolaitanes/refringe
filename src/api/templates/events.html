@@ -39,9 +39,9 @@
       delimiters: ['[[', ']]'],
       mounted() {
           const now = new Date();
-          const validStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-          const validEnd = new Date(validStart);
-          validEnd.setYear(validEnd.getFullYear() + 1);
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          const validStart = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+          const validEnd = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
 
           // injected JSON from the server
           const rawCalendars = JSON.parse(`{{{ calendars }}}` || []);
@@ -56,7 +56,7 @@
               calling: (c.calling_public || c.calling_users) && !(c.deadline && readDate(c.deadline) < validStart)
           }));
           const events = calendars.flatMap((c) => [
-              c.deadline && c.deadLine >= validStart
+              c.deadline && c.deadLine >= today
                   ? {
                       id: c.id,
                       title: 'CFW: ' + c.name,

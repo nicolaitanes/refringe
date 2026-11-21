@@ -17,7 +17,7 @@ export class CalendarsDB {
     async list(q) {
         const query = SQL`select c.*, p.id as publicid, p.publicname, p.key, p.ispublic, p.priority from calendars c left join publiccalendars p on c.id = p.calendarid where 1=1`;
         if ('active' in q) query.append(SQL` and c.active`);
-        if ('current' in q) query.append(SQL` and (c.enddate is null or c.enddate > now())`);
+        if ('current' in q) query.append(SQL` and (c.enddate is null or c.enddate > (now() + '- 366 days'))`);
         if ('ispublic' in q) query.append(SQL` and p.ispublic and c.active`);
         query.append(SQL` order by c.startdate, p.priority, c.name`);
         if ('limit' in q) query.append(SQL` limit ${q.limit}`);
