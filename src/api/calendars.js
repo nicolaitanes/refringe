@@ -7,6 +7,8 @@ import { markdownConverter, QuestionsDB } from './questions.js';
 import { TagsDB } from './tags.js';
 import { renderTemplate } from './templates.js';
 import { tmplJson, tmplJsonFields, writeLocalJsonDates } from './time.js';
+import { UsersDB } from './users.js';
+import { VenuesDB } from './venues.js';
 
 const upload = multer();
 
@@ -87,6 +89,10 @@ export class CalendarsDB {
         query.append(` calendars_${entity}s set active = false where ${entity}id =`);
         query.append(SQL` ${entityid} and calendarid=${id}`);
         await this.logged.update('calendars_'+entity, [id, entityid], { calendarid: id, [entity+'id']: entityid, active: false }, query);
+    }
+    async userHasShows(id, userid) {
+        const result = await pgdb.query(SQL`select case when exists (select 1 from shows s join proposals p on s.proposalid = p.id where s.active and p.active and p.userid = ${userid} and s.calendarid = ${id}) then 1 else 0 end as yesno`);
+        return !!result.rows[0].yesno;
     }
     async listProposals(id) {
         const result = await pgdb.query(SQL`select p.*, u.fullname from proposals p join users u on p.userid = u.id left join calendars_proposals c on c.proposalid = p.id where p.active and u.active and (calendarid is null or calendarid=${id} or allcalendars) order by title, fullname`);
@@ -236,62 +242,6 @@ router.get('/events/', async (req, res) => {
     }))(req, res);
 });
 
-router.get('/events/:key', async (req, res) => {
-    const calendarsDB = new CalendarsDB(req);
-    const notesDB = new NotesDB(req);
-    const questionsDB = new QuestionsDB(req);
-    const tagsDB = new TagsDB(req);
-    const calendar = await calendarsDB.getPublic(req.params.key);
-    if (!calendar) return res.status(404).send('Not Found');
-    // TODO short-duration caching
-    const [
-        proposals,
-        venues,
-        shows,
-        notes,
-        tags,
-        showTags
-    ] = await Promise.all([
-        calendarsDB.listProposals(calendar.calendarid),
-        calendarsDB.listVenues(calendar.calendarid),
-        calendarsDB.listShows(calendar.calendarid),
-        notesDB.list({ active: true, level: 99 }),
-        tagsDB.listLinked('proposal', null, { active: true, level: 99 }),
-        tagsDB.listLinked('show', null, { active: true, level: 99 })
-    ]);
-    await Promise.all([
-        ...proposals.map(async p => {
-            const qa = await questionsDB.listAnswers({ proposalid: p.id });
-            for (const { fieldname, answer, ispublic } of qa) {
-                if (ispublic) p[fieldname] = answer;
-            }
-        }),
-        ...venues.map(async v => {
-            const qa = await questionsDB.listAnswers({ venueid: v.id });
-            for (const { fieldname, answer, ispublic } of qa) {
-                if (ispublic) v[fieldname] = answer;
-            }
-        })
-    ]);
-    return renderTemplate(tmplJsonFields({
-        template: 'event-schedule',
-        key: calendar.key,
-        calendarid: calendar.id,
-        proposalid: req.query.proposal || '',
-        tagname: req.query.tag || '',
-        venueid: req.query.venue || '',
-        calendar: { ...calendar, id: calendar.calendarid, publicid: calendar.id },
-        pubcalendar: calendar,
-        proposals,
-        venues,
-        shows: shows.filter(s => s.venueid),
-        notes,
-        tags,
-        showTags
-    }))(req, res);
-    // TODO more SSR based on req.query (also `by: 'artist' | 'venue' | 'day')
-});
-
 router.get('/events/:key/map/', async (req, res) => {
     const calendarsDB = new CalendarsDB(req);
     const notesDB = new NotesDB(req);
@@ -320,6 +270,107 @@ router.get('/events/:key/map/', async (req, res) => {
     }))(req, res);
 });
     
+const getScheduleOrPreview = async (req, res, key, uvid) => {
+    const calendarsDB = new CalendarsDB(req);
+    const notesDB = new NotesDB(req);
+    const questionsDB = new QuestionsDB(req);
+    const tagsDB = new TagsDB(req);
+    const usersDB = new UsersDB(req);
+    const venuesDB = new VenuesDB(req);
+    let calendar = await calendarsDB.getPublic(key);
+    let isPreview = false;
+    let userid = null;
+    let venueid = null;
+    if (!calendar) {
+        isPreview = true;
+        calendar = await calendarsDB.get(key);
+        if (!calendar) return res.status(404).send('Not Found');
+        calendar.calendarid = calendar.id;
+        userid = uvid?.split('')?.reverse('')?.join('');
+        if ((!req.auth || req.auth.l > 10) &&!userid) return res.status(404).send('Not Found');
+        if (userid) {
+            const user = await usersDB.getByID(userid);
+            if (!user) {
+                venueid = userid;
+                userid = null;
+                const venue = await venuesDB.get(venueid);
+                if (!venue) return res.status(404).send('Not Found');
+            }
+        }
+    }
+    // TODO short-duration caching
+    let [
+        proposals,
+        venues,
+        shows,
+        notes,
+        tags,
+        showTags
+    ] = await Promise.all([
+        calendarsDB.listProposals(calendar.calendarid),
+        calendarsDB.listVenues(calendar.calendarid),
+        calendarsDB.listShows(calendar.calendarid),
+        notesDB.list({ active: true, level: 99 }),
+        tagsDB.listLinked('proposal', null, { active: true, level: 99 }),
+        tagsDB.listLinked('show', null, { active: true, level: 99 })
+    ]);
+    if (venueid) {
+        const showsByID = new Map(shows.map(s => [s.id, s]));
+        shows = shows.filter(s => (s.venueid ?? showsByID.get(s.groupshowid)?.venueid) === venueid);
+        proposals = proposals.filter(p => shows.some(s => s.proposalid === p.id));
+        venues = venues.filter(v => v.id === venueid);
+    } else if (userid) {
+        const proposalsByID = new Map(proposals.map(p => [p.id, p]));
+        const showsByID = new Map(shows.map(s => [s.id, s]));
+        const showsByProposalID = shows.reduce((all, s) => { (all[s.proposalid] ||= []).push(s); return all }, {});
+        const showsByGroupID = shows.reduce((all, s) => { (all[s.groupshowid] ||= []).push(s); return all }, {});
+        proposals = proposals.filter(p =>
+            p.userid === userid ||
+                // parent group shows: any child by this user
+            (p.isgroupshow && showsByGroupID[p.id]?.some(s => proposalsByID.get(s.proposalid)?.userid === userid)) ||
+                // children of user's group shows
+            (p.groupshowid && proposalsByID.get(showsByID.get(p.groupshowid)?.proposalid)?.userid === userid)
+        );
+        shows = shows.filter(s => proposals.some(p => p.id === s.proposalid));
+        venues = venues.filter(v => shows.some(s => s.venueid === v.id));
+    }
+    await Promise.all([
+        ...proposals.map(async p => {
+            const qa = await questionsDB.listAnswers({ proposalid: p.id });
+            for (const { fieldname, answer, ispublic } of qa) {
+                if (ispublic) p[fieldname] = answer;
+            }
+        }),
+        ...venues.map(async v => {
+            const qa = await questionsDB.listAnswers({ venueid: v.id });
+            for (const { fieldname, answer, ispublic } of qa) {
+                if (ispublic) v[fieldname] = answer;
+            }
+        })
+    ]);
+    return renderTemplate(tmplJsonFields({
+        template: 'event-schedule',
+        key: calendar.key,
+        calendarid: calendar.id,
+        proposalid: req.query.proposal || '',
+        tagname: req.query.tag || '',
+        venueid: req.query.venue || '',
+        calendar: { ...calendar, id: calendar.calendarid, publicid: calendar.id },
+        pubcalendar: calendar,
+        proposals,
+        venues,
+        shows: shows.filter(s => s.venueid),
+        notes,
+        tags,
+        showTags,
+        isPreview
+    }))(req, res);
+    // TODO more SSR based on req.query (also `by: 'artist' | 'venue' | 'day')
+};
+
+router.get('/events/:key', async (req, res) => getScheduleOrPreview(req, res, req.params.key));
+router.get('/events/:key/:uvid', async (req, res) => getScheduleOrPreview(req, res, req.params.key, req.params.uvid));
+
 
 router.get('/', async (req, res) => {
     const calendars = await new CalendarsDB(req).list(req.query);
@@ -328,7 +379,8 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
-    const calendar = await new CalendarsDB(req).get(req.params.id);
+    const calendarsDB = new CalendarsDB(req);
+    const calendar = await calendarsDB.get(req.params.id);
     if (!calendar) return res.status(404).send('Not Found');
     const deadlineOrStart = calendar.deadline || calendar.startdate;
     const pastDeadline = deadlineOrStart < new Date(new Date().getTime() + 24*60*60_000);
@@ -342,18 +394,30 @@ router.get('/:id', async (req, res) => {
     }
     if (!req.auth || req.auth.l > 20) {
         if (!status.startsWith('public')) return res.status(403).send('Forbidden');
-    } else if (req.auth.l > 10) {
-        if (status !== 'public' && status !== 'usercall') return res.status(403).send('Forbidden');
     }
+    const canPreview = req.auth?.u && await calendarsDB.userHasShows(req.params.id, req.auth.u);
+    const previewLink = canPreview ? `/calendars/events/${req.params.id}/${req.auth.u.split('')?.reverse('')?.join('')}` : null;
     if (req.headers.accept?.includes('application/json')) return res.json(calendar);
     if (pastDeadline) calendar.callforwork = null;
     calendar.name = calendar.publicname || calendar.name;
     return renderTemplate(writeLocalJsonDates({
-        template: req.auth && req.auth.l <= 10 ? 'calendar-edit' : 'calendar-detail',
+        template: 'calendar-detail',
         calendar,
         calendarJSON: tmplJson(calendar),
         pastDeadline,
+        previewLink,
         status
+    }))(req, res);
+});
+
+router.get('/:id/edit', async (req, res) => {
+    const calendar = await new CalendarsDB(req).get(req.params.id);
+    if (!calendar) return res.status(404).send('Not Found');
+    else if (!req.auth || req.auth.l > 10) return res.status(403).send('Forbidden');
+    return renderTemplate(writeLocalJsonDates({
+        template: 'calendar-edit',
+        calendar,
+        calendarJSON: tmplJson(calendar)
     }))(req, res);
 });
 

@@ -30,7 +30,15 @@
   {{/if}}
 
   {{#if calendar.ispublic}}
-  <a href="/calendars/events/{{ calendar.key }}">[Full Schedule]</a>
+    <a href="/calendars/events/{{ calendar.key }}">[Full Schedule]</a>
+  {{else}}
+    {{#if previewLink}}
+    <a href="{{ previewLink }}">[My Schedule]</a>
+    {{/if}}
+  {{/if}}
+
+  {{#if isOrg}}
+<a href="/calendars/{{ calendar.id }}/edit">✏️</a>
   {{/if}}
 </div>
 

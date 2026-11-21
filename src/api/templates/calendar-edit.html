@@ -224,8 +224,7 @@ h1 {
         },
         methods: {
             previewProposal() {
-                // TODO
-                // window.open(`/TEST/Calendar/Admin/?id=${this.show.Calendar_ID}&proposal=${this.show.Proposal_details_ID}`, '_blank');
+               window.open(`/calendars/events/${this.show.calendarid}/${this.show.userid.split('').reverse().join('')}`, '_blank');
             },
             selectProposal() {
                 this.$emit('selectproposal', this.show.proposalid);
@@ -367,8 +366,7 @@ h1 {
                 open('/proposals/' + this.proposal.id, '_blank');
             },
             previewProposal() {
-                // TODO
-                // window.open(`/TEST/Calendar/Admin/?id=${this.calendarid}&proposal=${this.proposal.id}`, '_blank');
+                window.open(`/calendars/events/${this.calendarid}/${this.proposal.userid.split('').reverse().join('')}`, '_blank');
             },
             add() {
                 const showData = {
@@ -616,7 +614,7 @@ h1 {
         mounted() {
             // Get calendar ID from final URL segment
             const urlParams = new URLSearchParams(window.location.search);
-            this.currentCalendarID = window.location.pathname.split('/').at(-1);
+            this.currentCalendarID = window.location.pathname.split('/').at(-2);
             
             // Load all data concurrently and handle fragment restoration after
             Promise.all([
@@ -629,6 +627,7 @@ h1 {
             .then(() => this.loadProposalTags())
               .then(() => {
                 this.restoreSelectionFromFragment();
+                for (const show of this.shows) show.userid = this.proposals.find(p => p.id === show.proposalid)?.userid;
             });
             
             // Listen for tag filter changes from TagLink components
@@ -885,17 +884,13 @@ h1 {
             },
             previewtag() {
                 const tag = this.visibleTags.find(t => t.id === this.tagFilter);
-                // TODO
-                // window.open(`/TEST/Calendar/Admin/?id=${this.currentCalendarID}&tag=${tag.name}`, '_blank');
+                window.open(`/calendars/events/${this.currentCalendarID}?tag=${tag.name}`, '_blank');
             },
             previewvenue() {
                 if (this.venueFilter) {
-                    const venue = this.venues.find(v => v.id === this.venueFilter);
-                    // TODO
-                    // window.open(`/TEST/Calendar/Admin/?id=${this.currentCalendarID}&venue=${venue.id}`, '_blank');
+                    window.open(`/calendars/events/${this.currentCalendarID}/${this.venueFilter.split('').reverse().join('')}`, '_blank');
                 } else {
-                    // TODO
-                    // window.open(`/TEST/Calendar/Admin/?id=${this.currentCalendarID}`, '_blank');
+                    window.open(`/calendars/events/${this.currentCalendarID}`, '_blank');
                 }
             },
             // Load proposal tags for filtering
