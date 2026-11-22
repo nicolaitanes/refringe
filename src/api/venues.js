@@ -14,16 +14,21 @@ export class VenuesDB {
         this.logged = logged(req);
     }
     async list(q) {
-        const query = SQL`select v.* from venues v where 1=1`;
-        if (q.active) query.append(SQL` and v.active = true`);
-        if (q.userid) query.append(SQL` and v.userid = ${q.userid}`);
-        query.append(SQL` order by v.name`);
-        const result = await pgdb.query(query);
-        return result.rows;
+        try {
+            const query = SQL`select v.* from venues v where 1=1`;
+            if (q.active) query.append(SQL` and v.active = true`);
+            if (q.userid) query.append(SQL` and v.userid = ${q.userid}`);
+            query.append(SQL` order by v.name`);
+            const result = await pgdb.query(query);
+            return result.rows;
+        } catch (err) { console.error(err); }
+        return [];
     }
     async get(id) {
-        const result = await pgdb.query(SQL`select * from venues where id = ${id}`);
-        return result.rows[0];
+        try {
+            const result = await pgdb.query(SQL`select * from venues where id = ${id}`);
+            return result.rows[0];
+        } catch (err) { console.error(err); }
     }
     async add(q) {
         return await this.logged.add('venues', q, SQL`insert into venues (
@@ -33,7 +38,8 @@ export class VenuesDB {
         ) returning *`);
     }
     async update(id, q) {
-        return await this.logged.update('venues', id, q, SQL`update venues set
+        try {
+            return await this.logged.update('venues', id, q, SQL`update venues set
                 active = ${!!q.active},
                 name = ${q.name.trim()},
                 allcalendars = ${!!q.allcalendars},
@@ -48,7 +54,8 @@ export class VenuesDB {
                 website = ${q.website ? q.website.trim() : null},
                 updated = now()
             where id=${id}`
-        );
+            );
+        } catch (err) { console.error(err); }
     }
 };
 

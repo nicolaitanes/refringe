@@ -629,7 +629,7 @@ ul {
 <nav>
     <div class="days">
         <a href="/">🏠</a>
-        <a href="/calendars/events/{{ key }}">🠉</a>
+        <a href="${ location.pathname }">🠉</a>
         <div style="${(orderBy && orderBy !== 'day') || onlyFavorites || proposalid || venueid || (tagName && tagName !== 'Group Show') ? 'display: none' : 'display: contents'}">
             ${() => dates.map(d => html`<a href="${() => '#' + d}">${d.slice(5)}</a>`)}
         </div>

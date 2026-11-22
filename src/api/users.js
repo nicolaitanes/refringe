@@ -9,8 +9,10 @@ export class UsersDB {
         this.logged = logged(req);
     }
     async getByID(id) {
-        const userResult = await pgdb.query(SQL`select u.*, level from users u join roles r on u.roleid = r.id where u.id=${id} limit 1`);
-        return userResult.rows[0];
+        try {
+            const userResult = await pgdb.query(SQL`select u.*, level from users u join roles r on u.roleid = r.id where u.id=${id} limit 1`);
+            return userResult.rows[0];
+        } catch (err) { console.error(err); }
     }
     async getByName(username, password) {
         const userResult = await pgdb.query(SQL`select u.*, level from users u join roles r on u.roleid = r.id where u.username=${username} limit 1`);
@@ -36,18 +38,24 @@ export class UsersDB {
         return result.rows;
     }
     async update(id, userdata) {
-        const query = SQL`update users set fullname=${userdata.fullname}, phone=${userdata.phone}, email=${userdata.email}, street=${userdata.street}, city=${userdata.city}, state=${userdata.state}, zip=${userdata.zip}`;
-        if ('roleid' in userdata) query.append(SQL`, roleid=${userdata.roleid}, active=${userdata.active}`);
-        query.append(SQL` where id=${id}`);
-        return await this.logged.update('users', id, userdata, query);
+        try {
+            const query = SQL`update users set fullname=${userdata.fullname}, phone=${userdata.phone}, email=${userdata.email}, street=${userdata.street}, city=${userdata.city}, state=${userdata.state}, zip=${userdata.zip}`;
+            if ('roleid' in userdata) query.append(SQL`, roleid=${userdata.roleid}, active=${userdata.active}`);
+            query.append(SQL` where id=${id}`);
+            return await this.logged.update('users', id, userdata, query);
+        } catch (err) { console.error(err); }
     }
     async updatePassword(id, password) {
-        const passhash = await bcrypt.hash(password, saltRounds);
-        await this.logged.update('users', id, { passhash }, SQL`update users set passhash=${passhash} where id = ${id}`);
+        try {
+            const passhash = await bcrypt.hash(password, saltRounds);
+            await this.logged.update('users', id, { passhash }, SQL`update users set passhash=${passhash} where id = ${id}`);
+        } catch (err) { console.error(err); }
     }
     async revokeOtherDevices(id) {
-        const result = await this.logged.update('users', id, { revocation: "+1" }, SQL`update users set revocation = revocation + 1 where id=${id} returning revocation`);
-        return result.revocation;
+        try {
+            const result = await this.logged.update('users', id, { revocation: "+1" }, SQL`update users set revocation = revocation + 1 where id=${id} returning revocation`);
+            return result.revocation;
+        } catch (err) { console.error(err); }
     }
     async findRoleID(level) {
         // TODO cache for a little while

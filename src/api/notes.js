@@ -25,50 +25,61 @@ export class NotesDB {
             else query.append(SQL` and n.is_visible_to_organizers`);
         }
         query.append(SQL` order by n.id desc`);
-        const result = await pgdb.query(query);
-        return result.rows;
+        try {
+            const result = await pgdb.query(query);
+            return result.rows;
+        } catch (err) { console.error(err); }
+        return [];
     }
     async get(id) {
-        const result = await pgdb.query(SQL`select * from notes where id = ${id}`);
-        return result.rows[0];
+        try {
+            const result = await pgdb.query(SQL`select * from notes where id = ${id}`);
+            return result.rows[0];
+        } catch (err) { console.error(err); }
     }
     async add(q) {
-        const note = await this.logged.add('notes', q, SQL`insert into notes (content, is_visible_to_organizers, is_visible_to_proposers, is_visible_to_public, created_by_userid) values (${q.content || ''}, ${!!q.is_visible_to_organizers}, ${!!q.is_visible_to_proposers}, ${!!q.is_visible_to_public}, ${q.created_by_userid}) returning *`);
-        if (q.proposalid) {
-            const link = { noteid: note.id, proposalid: q.proposalid };
-            await this.logged.add('notes_proposals', link, SQL`insert into notes_proposals (noteid, proposalid) values (${link.noteid}, ${q.proposalid}) returning *`);
-            note.proposalid = q.proposalid;
-        } if (q.showid) {
-            const link = { noteid: note.id, showid: q.showid };
-            await this.logged.add('notes_shows', link, SQL`insert into notes_shows (noteid, showid) values (${link.noteid}, ${q.showid}) returning *`);
-            note.showid = q.showid;
-        } if (q.userid) {
-            const link = { noteid: note.id, userid: q.userid };
-            await this.logged.add('notes_users', link, SQL`insert into notes_users (noteid, userid) values (${link.noteid}, ${q.userid}) returning *`);
-            note.userid = q.userid;
-        } if (q.venueid) {
-            const link = { noteid: note.id, venueid: q.venueid };
-            await this.logged.add('notes_venues', link, SQL`insert into notes_venues (noteid, venueid) values (${link.noteid}, ${q.venueid}) returning *`);
-            note.venueid = q.venueid;
-        }
-        return note;
+        try {
+            const note = await this.logged.add('notes', q, SQL`insert into notes (content, is_visible_to_organizers, is_visible_to_proposers, is_visible_to_public, created_by_userid) values (${q.content || ''}, ${!!q.is_visible_to_organizers}, ${!!q.is_visible_to_proposers}, ${!!q.is_visible_to_public}, ${q.created_by_userid}) returning *`);
+            if (q.proposalid) {
+                const link = { noteid: note.id, proposalid: q.proposalid };
+                await this.logged.add('notes_proposals', link, SQL`insert into notes_proposals (noteid, proposalid) values (${link.noteid}, ${q.proposalid}) returning *`);
+                note.proposalid = q.proposalid;
+            } if (q.showid) {
+                const link = { noteid: note.id, showid: q.showid };
+                await this.logged.add('notes_shows', link, SQL`insert into notes_shows (noteid, showid) values (${link.noteid}, ${q.showid}) returning *`);
+                note.showid = q.showid;
+            } if (q.userid) {
+                const link = { noteid: note.id, userid: q.userid };
+                await this.logged.add('notes_users', link, SQL`insert into notes_users (noteid, userid) values (${link.noteid}, ${q.userid}) returning *`);
+                note.userid = q.userid;
+            } if (q.venueid) {
+                const link = { noteid: note.id, venueid: q.venueid };
+                await this.logged.add('notes_venues', link, SQL`insert into notes_venues (noteid, venueid) values (${link.noteid}, ${q.venueid}) returning *`);
+                note.venueid = q.venueid;
+            }
+            return note;
+        } catch (err) { console.error(err); }
     }
     async update(id, q) {
-        const query = SQL`update notes set updated=now()`;
-        if ('content' in q) query.append(SQL`, content=${q.content}`);
-        if ('is_visible_to_organizers' in q) query.append(SQL`, is_visible_to_organizers = ${!!q.is_visible_to_organizers}`);
-        if ('is_visible_to_proposers' in q) query.append(SQL`, is_visible_to_proposers = ${!!q.is_visible_to_proposers}`);
-        if ('is_visible_to_public' in q) query.append(SQL`, is_visible_to_public = ${!!q.is_visible_to_public}`);
-        if ('is_hidden' in q) query.append(SQL`, is_hidden = ${!!q.is_hidden}`);
-        query.append(SQL` where id=${id} returning *`);
-        return await this.logged.update('notes', id, q, query);
+        try {
+            const query = SQL`update notes set updated=now()`;
+            if ('content' in q) query.append(SQL`, content=${q.content}`);
+            if ('is_visible_to_organizers' in q) query.append(SQL`, is_visible_to_organizers = ${!!q.is_visible_to_organizers}`);
+            if ('is_visible_to_proposers' in q) query.append(SQL`, is_visible_to_proposers = ${!!q.is_visible_to_proposers}`);
+            if ('is_visible_to_public' in q) query.append(SQL`, is_visible_to_public = ${!!q.is_visible_to_public}`);
+            if ('is_hidden' in q) query.append(SQL`, is_hidden = ${!!q.is_hidden}`);
+            query.append(SQL` where id=${id} returning *`);
+            return await this.logged.update('notes', id, q, query);
+        } catch (err) { console.error(err); }
     }
     async delete(id) {
-        await this.logged.delete('notes_proposals', [id], SQL`delete from notes_proposals where noteid = ${id}`, { noteid: id });
-        await this.logged.delete('notes_shows', [id], SQL`delete from notes_shows where noteid = ${id}`, { noteid: id });
-        await this.logged.delete('notes_users', [id], SQL`delete from notes_users where noteid = ${id}`, { noteid: id });
-        await this.logged.delete('notes_venues', [id], SQL`delete from notes_venues where noteid = ${id}`, { noteid: id });
-        await this.logged.delete('notes', id, SQL`delete from notes where id=${id}`);
+        try {
+            await this.logged.delete('notes_proposals', [id], SQL`delete from notes_proposals where noteid = ${id}`, { noteid: id });
+            await this.logged.delete('notes_shows', [id], SQL`delete from notes_shows where noteid = ${id}`, { noteid: id });
+            await this.logged.delete('notes_users', [id], SQL`delete from notes_users where noteid = ${id}`, { noteid: id });
+            await this.logged.delete('notes_venues', [id], SQL`delete from notes_venues where noteid = ${id}`, { noteid: id });
+            await this.logged.delete('notes', id, SQL`delete from notes where id=${id}`);
+        } catch (err) { console.error(err); }
     }
 };
 

@@ -45,50 +45,56 @@ export class QuestionsDB {
         ) returning *`);
     }
     async update(id, q) {
-        return await this.logged.update('questions', id, q, SQL`update questions set
-        active = ${q.active},
-        required = ${q.required},
-        ispublic = ${q.ispublic},
-        forproposal = ${q.forproposal},
-        foruser = ${q.foruser},
-        forvenue = ${q.forvenue},
-        priority = ${q.priority},
-        fieldname = ${q.fieldname},
-        fieldtype = ${q.fieldtype},
-        choices = ${JSON.stringify(q.choices)},
-        pattern = ${q.pattern},
-        question = ${q.question}
-        where id=${id}`);
+        try {
+            return await this.logged.update('questions', id, q, SQL`update questions set
+            active = ${q.active},
+            required = ${q.required},
+            ispublic = ${q.ispublic},
+            forproposal = ${q.forproposal},
+            foruser = ${q.foruser},
+            forvenue = ${q.forvenue},
+            priority = ${q.priority},
+            fieldname = ${q.fieldname},
+            fieldtype = ${q.fieldtype},
+            choices = ${JSON.stringify(q.choices)},
+            pattern = ${q.pattern},
+            question = ${q.question}
+            where id=${id}`);
+        } catch (err) { console.error(err); }
     }
     async listAnswers(q) {
-        const result =
-            q.proposalid ? await pgdb.query(SQL`select * from questions q left outer join proposalanswers a on a.questionid = q.id and a.proposalid = ${q.proposalid} where q.active and q.forproposal order by priority, fieldname`) :
-            q.userid ? await pgdb.query(SQL`select * from questions q left outer join useranswers a on a.questionid = q.id and a.userid = ${q.userid} where q.active and q.foruser order by priority, fieldname`) :
-            q.venueid ? await pgdb.query(SQL`select * from questions q left outer join venueanswers a on a.questionid = q.id and a.venueid = ${q.venueid} where q.active and q.forvenue order by priority, fieldname`) :
-            [];
-        return result.rows.map(qa => ({
-            ...qa,
-            isChoices: !qa.fieldtype && !!qa.choices?.length,
-            isTextarea: qa.fieldtype === 'textarea',
-            isYesno: qa.fieldtype === 'yesno',
-            answer: qa.answer || '',
-            proposalid: q.proposalid,
-            userid: q.userid,
-            venueid: q.venueid
-        }));
+        try {
+            const result =
+                  q.proposalid ? await pgdb.query(SQL`select * from questions q left outer join proposalanswers a on a.questionid = q.id and a.proposalid = ${q.proposalid} where q.active and q.forproposal order by priority, fieldname`) :
+                  q.userid ? await pgdb.query(SQL`select * from questions q left outer join useranswers a on a.questionid = q.id and a.userid = ${q.userid} where q.active and q.foruser order by priority, fieldname`) :
+                  q.venueid ? await pgdb.query(SQL`select * from questions q left outer join venueanswers a on a.questionid = q.id and a.venueid = ${q.venueid} where q.active and q.forvenue order by priority, fieldname`) :
+                  [];
+            return result.rows.map(qa => ({
+                ...qa,
+                isChoices: !qa.fieldtype && !!qa.choices?.length,
+                isTextarea: qa.fieldtype === 'textarea',
+                isYesno: qa.fieldtype === 'yesno',
+                answer: qa.answer || '',
+                proposalid: q.proposalid,
+                userid: q.userid,
+                venueid: q.venueid
+            }));
+        } catch (err) { console.error(err); }
     }
     async addOrUpdateAnswer(q) {
         if (!q.questionid) return;
-        if (q.proposalid) {
-            await this.logged.upsert('proposalanswers', q, SQL`insert into proposalanswers (questionid, proposalid, answer) values (${q.questionid}, ${q.proposalid}, ${q.answer || ''})
+        try {
+            if (q.proposalid) {
+                await this.logged.upsert('proposalanswers', q, SQL`insert into proposalanswers (questionid, proposalid, answer) values (${q.questionid}, ${q.proposalid}, ${q.answer || ''})
                 on conflict (questionid, proposalid) do update set answer = excluded.answer`);
-        } else if (q.userid) {
-            await this.logged.upsert('useranswers', q, SQL`insert into useranswers (questionid, userid, answer) values (${q.questionid}, ${q.userid}, ${q.answer || ''})
+            } else if (q.userid) {
+                await this.logged.upsert('useranswers', q, SQL`insert into useranswers (questionid, userid, answer) values (${q.questionid}, ${q.userid}, ${q.answer || ''})
                 on conflict (questionid, userid) do update set answer = excluded.answer`);
-        } else if (q.venueid) {
-            await this.logged.upsert('venueanswers', q, SQL`insert into venueanswers (questionid, venueid, answer) values (${q.questionid}, ${q.venueid}, ${q.answer || ''})
+            } else if (q.venueid) {
+                await this.logged.upsert('venueanswers', q, SQL`insert into venueanswers (questionid, venueid, answer) values (${q.questionid}, ${q.venueid}, ${q.answer || ''})
                 on conflict (questionid, venueid) do update set answer = excluded.answer`);
-        }
+            }
+        } catch (err) { console.error(err); }
     }
 };
 

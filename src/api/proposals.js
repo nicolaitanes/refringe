@@ -14,33 +14,42 @@ export class ProposalsDB {
         this.logged = logged(req);
     }
     async list(q) {
-        const query = SQL`select p.*, u.fullname from proposals p join users u on p.userid = u.id where u.active = true`;
-        if (q.active) query.append(SQL` and p.active = true`);
-        if (q.userid) query.append(SQL` and p.userid = ${q.userid}`);
-        query.append(SQL` order by p.id desc`);
-        const result = await pgdb.query(query);
-        return result.rows;
+        try {
+            const query = SQL`select p.*, u.fullname from proposals p join users u on p.userid = u.id where u.active = true`;
+            if (q.active) query.append(SQL` and p.active = true`);
+            if (q.userid) query.append(SQL` and p.userid = ${q.userid}`);
+            query.append(SQL` order by p.id desc`);
+            const result = await pgdb.query(query);
+            return result.rows;
+        } catch (err) { console.error(err); }
+        return [];
     }
     async get(id) {
-        const result = await pgdb.query(SQL`select * from proposals where id = ${id}`);
-        return result.rows[0];
+        try {
+            const result = await pgdb.query(SQL`select * from proposals where id = ${id}`);
+            return result.rows[0];
+        } catch (err) { console.error(err); }
     }
     async add(q) {
-        return await this.logged.add('proposals', q, SQL`insert into proposals (
+        try {
+            return await this.logged.add('proposals', q, SQL`insert into proposals (
             userid, title, stagename, allcalendars, active
         ) values (
             ${q.userid}, ${q.title?.trim()}, ${q.stagename || null}, ${!!q.allcalendars}, ${q.active || true}
         ) returning *`);
+        } catch (err) { console.error(err); }
     }
     async update(id, q) {
-        return await this.logged.update('proposals', id, q, SQL`update proposals set
+        try {
+            return await this.logged.update('proposals', id, q, SQL`update proposals set
                 title = ${q.title?.trim()},
                 stagename = ${q.stagename?.trim()},
                 allcalendars = ${!!q.allcalendars},
                 active = ${q.active},
                 updated = now()
             where id=${id}`
-        );
+            );
+        } catch (err) { console.error(err); }
     }
 };
 

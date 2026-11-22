@@ -20,8 +20,10 @@ export class TagsDB {
         return result.rows;
     }
     async get(id) {
-        const result = await pgdb.query(SQL`select * from tags where id = ${id}`);
-        return result.rows[0];
+        try {
+            const result = await pgdb.query(SQL`select * from tags where id = ${id}`);
+            return result.rows[0];
+        } catch (err) { console.error(err); }
     }
     async add(q) {
         return await this.logged.add('tags', q, SQL`insert into tags (name, emoji, description, is_visible_to_public, created_by_userid) values (${q.name || ''}, ${q.emoji || ''}, ${q.description || ''}, ${!!q.is_visible_to_public}, ${q.created_by_userid}) returning *`);
@@ -42,7 +44,9 @@ export class TagsDB {
             query.append(part);
         }
         query.append(` where id=${id} returning *`);
-        return await this.logged.update('tags', id, q, query);
+        try {
+            return await this.logged.update('tags', id, q, query);
+        } catch (err) { console.error(err); }
     }
     async listLinked(contextType, recordid, q) {
         const query = SQL`select t.*, `;
@@ -56,20 +60,26 @@ export class TagsDB {
             if (q.level > 10) query.append(SQL` and t.is_visible_to_public`)
         }
         query.append(` order by active desc, name`);
-        const result = await pgdb.query(query);
-        return result.rows;
+        try {
+            const result = await pgdb.query(query);
+            return result.rows;
+        } catch (err) { console.error(err); }
     }
     async link(id, contextType, recordid) {
         const query = SQL`insert into `;
         query.append(`tags_${contextType}s (tagid, ${contextType}id) values `);
         query.append(SQL`(${id}, ${recordid})`);
-        await this.logged.add(`tags_${contextType}s`, { tagid: id, [contextType+'id']: recordid }, query);
+        try {
+            await this.logged.add(`tags_${contextType}s`, { tagid: id, [contextType+'id']: recordid }, query);
+        } catch (err) { console.error(err); }
     }
     async unlink(id, contextType, recordid) {
         const query = SQL`delete from `;
         query.append(`tags_${contextType}s where ${contextType}id `);
         query.append(SQL`= ${recordid} and tagid = ${id}`);
-        await this.logged.delete(`tags_${contextType}s`, [id, recordid], query, { tagid: id, [contextType+'id']: recordid});
+        try {
+            await this.logged.delete(`tags_${contextType}s`, [id, recordid], query, { tagid: id, [contextType+'id']: recordid});
+        } catch (err) { console.error(err); }
     }
 };
 

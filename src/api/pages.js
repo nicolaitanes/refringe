@@ -18,26 +18,33 @@ export class PagesDB {
         this.logged = req ? logged(req) : powerless;
     }
     async list(q) {
-        const query = SQL`select p.* from pages p where 1=1`;
-        if (q.active) query.append(SQL` and p.active = true`);
-        query.append(SQL` order by p.urlpath`);
-        const result = await pgdb.query(query);
-        return result.rows;
+        try {
+            const query = SQL`select p.* from pages p where 1=1`;
+            if (q.active) query.append(SQL` and p.active = true`);
+            query.append(SQL` order by p.urlpath`);
+            const result = await pgdb.query(query);
+            return result.rows;
+        } catch (err) { console.error(err); }
+        return [];
     }
     async get(urlpath) {
-        const result = await pgdb.query(SQL`select * from pages where urlpath = ${urlpath} and active limit 1`);
-        return result.rows[0];
+        try {
+            const result = await pgdb.query(SQL`select * from pages where urlpath = ${urlpath} and active limit 1`);
+            return result.rows[0];
+        } catch (err) { console.error(err); }
     }
     async add(q) {
         return await this.logged.add('pages', q, SQL`insert into pages (urlpath, content) values (${q.urlpath}, ${q.content}) returning *`);
     }
     async update(id, q) {
-        return await this.logged.update('pages', id, q, SQL`update pages set
+        try {
+            return await this.logged.update('pages', id, q, SQL`update pages set
             active = ${q.active && q.active !== 'false'},
             urlpath = ${q.urlpath.trim()},
             content = ${q.content}
           where id=${id}`
-        );
+            );
+        } catch (err) { console.error(err); }
     }
 };
 
